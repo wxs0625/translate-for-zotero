@@ -1,0 +1,237 @@
+translator-plugin-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: var(--details-height, 450px);
+}
+
+translator-plugin-panel linkset {
+  display: none;
+}
+
+translator-plugin-panel .separator {
+  border-top: var(--material-border);
+}
+
+translator-plugin-panel .icon-button {
+  width: 24px;
+  height: 24px;
+  fill: var(--fill-secondary);
+  stroke: var(--fill-secondary);
+  -moz-context-properties: fill, fill-opacity, stroke, stroke-opacity;
+  list-style-image: url(chrome://__addonRef__/content/icons/swap.svg);
+}
+
+translator-plugin-panel .service-menulist {
+  flex: 1 1 0%;
+  width: 0;
+  min-width: 0;
+}
+
+translator-plugin-panel .model-menulist {
+  flex: 1 1 0%;
+  width: 0;
+  min-width: 0;
+}
+
+translator-plugin-panel .model-menulist[hidden] {
+  display: none !important;
+}
+
+translator-plugin-panel #__addonRef__-translate {
+  flex: 1.1 1 0%;
+  width: 0;
+  min-width: 0;
+}
+
+translator-plugin-panel .lang-menulist {
+  flex: 1;
+}
+
+translator-plugin-panel editable-text {
+  flex: 1;
+  line-height: 1.5;
+  min-height: calc(1.5em + 9px);
+  padding: 3px 6px 6px 6px;
+  text-align: justify;
+  border-radius: 6px;
+  text-indent: 1em;
+  -moz-hyphens: manual;
+  hyphens: manual;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  hyphenate-character: "-";
+  overflow-y: auto;
+  scrollbar-width: none;
+  background: #fff;
+}
+
+translator-plugin-panel math-textbox {
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+translator-plugin-panel math-textbox editable-text {
+  border-radius: 6px;
+}
+
+/* Raw input area keeps 2px horizontal padding */
+translator-plugin-panel #raw-text,
+translator-plugin-panel #raw-text editable-text {
+  padding-left: 2px !important;
+  padding-right: 2px !important;
+}
+
+translator-plugin-panel #raw-text,
+translator-plugin-panel #raw-text editable-text,
+translator-plugin-panel #raw-text .math-overlay {
+  background: var(--source-background-color, #fff);
+}
+
+translator-plugin-panel editable-text::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+translator-plugin-panel .output-area,
+translator-plugin-panel .output-area editable-text,
+translator-plugin-panel .output-area .math-overlay {
+  background: var(--output-background-color, #fff);
+}
+
+/* Justify translated output text only */
+translator-plugin-panel .output-area editable-text,
+translator-plugin-panel .output-area .math-overlay {
+  text-align: justify;
+  text-indent: 0;
+}
+
+/* Keep math text areas white even outside panel (e.g., gray area) */
+math-textbox,
+math-textbox editable-text,
+math-textbox .math-overlay {
+  background: #fff;
+}
+
+/* Minimal styles for math-textbox to match editable-text without intruding */
+translator-plugin-panel math-textbox {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  line-height: 1.5;
+  min-height: calc(1.5em + 9px);
+  flex: 1;
+  position: relative;
+}
+
+translator-plugin-panel math-textbox editable-text {
+  flex: 1;
+  min-height: calc(1.5em + 9px);
+}
+
+/* Output (result) area keeps a configurable minimum height.
+   --min-result-height is set by the panel from the minResultHeight
+   preference (in px). */
+translator-plugin-panel #result-text,
+translator-plugin-panel #result-text editable-text {
+  min-height: var(--min-result-height, calc(4.5em + 9px));
+}
+
+math-textbox[overlay-visible] editable-text {
+  visibility: hidden;
+  user-select: none;
+}
+
+translator-plugin-panel math-textbox .math-overlay {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  display: block; /* ensure layout box for HTML namespace */
+  padding: 3px 6px 6px 6px;
+  text-align: justify;
+  border-radius: 6px;
+  text-indent: 1em;
+  -moz-hyphens: manual;
+  hyphens: manual;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  hyphenate-character: "-";
+  scrollbar-width: none;
+}
+
+translator-plugin-panel math-textbox .math-overlay::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+translator-plugin-panel .editor-container {
+  display: flex;
+  flex: 1;
+  min-height: 60px;
+  flex-direction: column;
+  position: relative;
+}
+
+translator-plugin-panel[data-output-expanded="true"] .source-collapsed {
+  flex: 0 0 auto !important;
+  min-height: calc(1.5em + 9px) !important;
+  max-height: calc(1.5em + 9px) !important;
+}
+
+translator-plugin-panel[data-output-expanded="true"]
+  .source-collapsed
+  editable-text {
+  min-height: calc(1.5em + 9px) !important;
+}
+
+translator-plugin-panel[data-output-expanded="true"] .output-expanded {
+  flex: 1 1 auto !important;
+  min-height: var(--min-result-height, calc(4.5em + 9px));
+}
+
+translator-plugin-panel .draggable-container {
+  height: 13px;
+  cursor: ns-resize;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  justify-content: center;
+}
+
+translator-plugin-panel .draggable-container[hidden] {
+  display: none;
+}
+
+translator-plugin-panel .options-container {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 8px;
+  row-gap: 2px;
+  width: inherit;
+}
+
+translator-plugin-panel .options-grid:not([hidden]) {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: span 2;
+}
+
+translator-plugin-panel .options-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  color: var(--fill-secondary);
+}
+
+translator-plugin-panel .options-content {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+}
+
+translator-plugin-panel #__addonRef__-copy-container button {
+  min-width: auto;
+  flex: 1;
+}

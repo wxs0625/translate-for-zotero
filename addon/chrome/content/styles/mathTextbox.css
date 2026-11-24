@@ -1,0 +1,70 @@
+math-textbox[hidden] {
+  display: none;
+}
+
+math-textbox {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+math-textbox,
+math-textbox editable-text,
+math-textbox .math-overlay {
+  box-sizing: border-box;
+}
+
+math-textbox .math-overlay {
+  padding: 3px 6px 6px 6px;
+  pointer-events: auto;
+  user-select: text;
+  z-index: 1;
+  font-size: inherit;
+  line-height: inherit;
+  font-family: inherit;
+  text-align: justify;
+  text-indent: 0;
+  -moz-hyphens: manual;
+  hyphens: manual;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  hyphenate-character: "-";
+}
+
+math-textbox .math-overlay .zp-paragraph {
+  text-indent: 1em;
+  margin: 0;
+}
+
+math-textbox editable-text {
+  font-size: inherit;
+  line-height: inherit;
+  font-family: inherit;
+}
+
+math-textbox .math-overlay .katex {
+  font-size: 1em;
+  font-weight: 500;
+  color: #000;
+}
+
+math-textbox .math-overlay .katex,
+math-textbox .math-overlay .katex *,
+math-textbox .math-overlay .katex .mathnormal,
+math-textbox .math-overlay .katex .mathit,
+math-textbox .math-overlay .katex .textit,
+math-textbox .math-overlay .katex .boldsymbol,
+math-textbox .math-overlay .katex .mathitsf,
+math-textbox .math-overlay .katex .mathsfit,
+math-textbox .math-overlay .katex .textitsf {
+  font-family: inherit !important;
+  font-style: normal !important;
+}
+
+math-textbox .math-overlay .katex-display {
+  margin: 0 !important;
+}
+
+/* Avoid duplicated text on copy by hiding MathML output */
+math-textbox .math-overlay .katex .katex-mathml {
+  display: none;
+}
