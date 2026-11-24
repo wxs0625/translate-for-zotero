@@ -456,6 +456,16 @@ export class TranslatorPanel extends PluginCEBase {
   };
 
   get content() {
+    const hideAttr = (pref: string) => (getPref(pref) ? "" : ` hidden="true"`);
+    const initialService = String(getPref("translateSource") || "");
+    const initialLangFrom = String(getPref("sourceLanguage") || "");
+    const initialLangTo = String(getPref("targetLanguage") || "");
+    const escapeAttr = (value: string) =>
+      value
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
     return this._parseContentID(
       MozXULElement.parseXULToFragment(`
 <linkset>
@@ -465,14 +475,14 @@ export class TranslatorPanel extends PluginCEBase {
     href="chrome://${config.addonRef}/content/styles/panel.css"
   ></html:link>
 </linkset>
-<hbox id="engine" align="center">
-  <menulist id="services" class="service-menulist" native="true">
+<hbox id="engine" align="center"${hideAttr("showSidebarEngine")}>
+  <menulist id="services" class="service-menulist" native="true" value="${escapeAttr(initialService)}">
     <menupopup>
       ${services
         .getAllServicesWithType("sentence")
         .map((service) => {
           const customName = services.getServiceNameByID(service.id, false);
-          return `<menuitem label="${customName}" value="${service.id}" />`;
+          return `<menuitem label="${escapeAttr(customName)}" value="${escapeAttr(service.id)}" />`;
         })
         .join("\n")}
     </menupopup>
@@ -484,27 +494,27 @@ export class TranslatorPanel extends PluginCEBase {
   </menulist>
   <button id="translate" data-l10n-id="translate" />
 </hbox>
-<hbox id="language" align="center">
-  <menulist id="langfrom" class="lang-menulist" native="true">
+<hbox id="language" align="center"${hideAttr("showSidebarLanguage")}>
+  <menulist id="langfrom" class="lang-menulist" native="true" value="${escapeAttr(initialLangFrom)}">
     <menupopup>
-      ${LANG_CODE.map((lang) => `<menuitem label="${lang.name}" value="${lang.code}" />`).join("\n")}
+      ${LANG_CODE.map((lang) => `<menuitem label="${escapeAttr(lang.name)}" value="${escapeAttr(lang.code)}" />`).join("\n")}
     </menupopup>
   </menulist>
   <toolbarbutton id="swap-language" class="icon-button" data-l10n-id="swapLanguage" />
-  <menulist id="langto" class="lang-menulist" native="true">
+  <menulist id="langto" class="lang-menulist" native="true" value="${escapeAttr(initialLangTo)}">
     <menupopup>
-      ${LANG_CODE.map((lang) => `<menuitem label="${lang.name}" value="${lang.code}" />`).join("\n")}
+      ${LANG_CODE.map((lang) => `<menuitem label="${escapeAttr(lang.name)}" value="${escapeAttr(lang.code)}" />`).join("\n")}
     </menupopup>
   </menulist>
 </hbox>
-<html:div class="separator"></html:div>
+<html:div class="separator"${hideAttr("showSidebarLanguage")}></html:div>
 <html:div id="text-container" class="editor-container">
   ${
     (getPref("enableMathRendering") as boolean)
-      ? `<math-textbox id="raw-text"></math-textbox>`
-      : `<editable-text id="raw-text" multiline="true" />`
+      ? `<math-textbox id="raw-text"${hideAttr("showSidebarRaw")}></math-textbox>`
+      : `<editable-text id="raw-text" multiline="true"${hideAttr("showSidebarRaw")} />`
   }
-  <html:div id="resizer" class="draggable-container">
+  <html:div id="resizer" class="draggable-container"${hideAttr("showSidebarRaw")}>
     <html:div class="separator"></html:div>
   </html:div>
   ${
@@ -515,21 +525,21 @@ export class TranslatorPanel extends PluginCEBase {
 </html:div>
 <html:div class="separator"></html:div>
 <html:div class="options-container">
-  <html:div id="auto-container" class="options-grid">
+  <html:div id="auto-container" class="options-grid"${hideAttr("showSidebarSettings")}>
     <html:label class="options-label" data-l10n-id="auto" />
     <html:div class="options-content">
       <checkbox id="auto-trans-selection" native="true" data-l10n-id="autoTranslateSelection" />
       <checkbox id="auto-trans-annotation" native="true" data-l10n-id="autoTranslateAnnotation" />
     </html:div>
   </html:div>
-  <html:div id="concat-container" class="options-grid">
+  <html:div id="concat-container" class="options-grid"${hideAttr("showSidebarConcat")}>
     <html:label class="options-label" data-l10n-id="selection" />
     <html:div class="options-content">
       <checkbox id="concat" native="true" data-l10n-id="enableConcat" />
       <button id="clear-concat" data-l10n-id="clearConcat" />
     </html:div>
   </html:div>
-  <html:div id="copy-container" class="options-grid" >
+  <html:div id="copy-container" class="options-grid"${hideAttr("showSidebarCopy")}>
     <html:label class="options-label" data-l10n-id="copy" />
     <html:div class="options-content">
       <button id="copy-raw" data-l10n-id="copyRaw" />
@@ -775,6 +785,10 @@ export class TranslatorPanel extends PluginCEBase {
       setPref("customRawRatio", "1");
       setPref("customResultRatio", "1");
     });
+
+    // Apply saved preferences immediately on mount so startup never flashes
+    // uninitialized defaults (e.g. Afrikaans language dropdowns or hidden rows).
+    this.render();
   }
 
   destroy(): void {

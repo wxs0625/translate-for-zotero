@@ -22,6 +22,27 @@ translator-plugin-panel .icon-button {
   list-style-image: url(chrome://__addonRef__/content/icons/swap.svg);
 }
 
+translator-plugin-panel #__addonRef__-engine,
+translator-plugin-panel #__addonRef__-language {
+  gap: 6px;
+  margin-inline: 0;
+}
+
+translator-plugin-panel #__addonRef__-engine[hidden],
+translator-plugin-panel #__addonRef__-language[hidden],
+translator-plugin-panel .separator[hidden] {
+  display: none !important;
+}
+
+translator-plugin-panel .service-menulist,
+translator-plugin-panel .model-menulist,
+translator-plugin-panel .lang-menulist,
+translator-plugin-panel #__addonRef__-translate,
+translator-plugin-panel #__addonRef__-swap-language {
+  margin-inline: 0 !important;
+  margin-block: 0 !important;
+}
+
 translator-plugin-panel .service-menulist {
   flex: 1 1 0%;
   width: 0;

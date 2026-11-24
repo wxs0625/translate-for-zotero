@@ -643,19 +643,9 @@ export class TranslationServices {
       task.outputScrollLeft = 0;
       task.outputHasRendered = false;
     }
-    task.result =
-      noCache || forceRestart ? getString("status-translating") : "";
-    // Display raw
-    if (!noDisplay) {
-      if (!shouldDisplayTask()) {
-        return false;
-      }
-      addon.api.getTemporaryRefreshHandler()();
-    }
-
     let cacheHit = false;
     if (!noCache) {
-      // Check cache
+      // Check cache before displaying translating status so cache hits render immediately.
       const cachedTask = addon.data.translate.queue.findLast((_t) => {
         return (
           _t.status === "success" &&
@@ -682,6 +672,14 @@ export class TranslationServices {
     }
 
     if (!cacheHit) {
+      task.result = getString("status-translating");
+      // Display raw text and translating status immediately.
+      if (!noDisplay) {
+        if (!shouldDisplayTask()) {
+          return false;
+        }
+        addon.api.getTemporaryRefreshHandler()();
+      }
       // Get task service
       const service = this.getServiceById(task.service);
       if (!service) {
