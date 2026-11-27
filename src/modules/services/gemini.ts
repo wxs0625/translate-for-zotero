@@ -1,6 +1,8 @@
 import {
   getPref,
   getString,
+  getThinkingLevelOptions,
+  stripThinkingTags,
   transformPromptWithContext,
   isTaskSnapshotStillActive,
   getActiveReceiveToken,
@@ -26,7 +28,7 @@ function extractGeminiText(payload: any): string {
       ? candidate.content.parts
       : [];
     for (const part of parts) {
-      if (typeof part?.text === "string") {
+      if (!part?.thought && typeof part?.text === "string") {
         text += part.text;
       }
     }
@@ -42,7 +44,7 @@ function extractPartsText(payload: any): string {
       : [];
   let text = "";
   for (const part of parts) {
-    if (typeof part?.text === "string") {
+    if (!part?.thought && typeof part?.text === "string") {
       text += part.text;
     }
   }
@@ -125,7 +127,7 @@ function extractAnyResponseText(payload: any): ParsedText {
     for (const item of output) {
       const content = Array.isArray(item?.content) ? item.content : [];
       for (const part of content) {
-        if (typeof part?.text === "string") {
+        if (!part?.thought && typeof part?.text === "string") {
           text += part.text;
         }
       }
@@ -317,6 +319,26 @@ const translate = <TranslateService["translate"]>async function (data) {
     1,
     Math.max(DEFAULT_GEMINI_MAX_OUTPUT_TOKENS, configuredMaxOutputTokens),
   );
+  const thinkingLevel = getPref("gemini.thinkingLevel") as string;
+
+  function getThinkingConfig() {
+    const modelMatch = /models\/([^/?#]+)/.exec(apiURL);
+    const isGemini3 = /^gemini-3/.test(modelMatch?.[1] || "");
+    if (thinkingLevel === "off") {
+      return isGemini3 ? { thinkingLevel: "minimal" } : { thinkingBudget: 0 };
+    }
+    if (
+      thinkingLevel === "low" ||
+      thinkingLevel === "medium" ||
+      thinkingLevel === "high"
+    ) {
+      const budgets = { low: 1024, medium: 8192, high: 24576 };
+      return isGemini3
+        ? { thinkingLevel: thinkingLevel }
+        : { thinkingBudget: budgets[thinkingLevel] };
+    }
+    return undefined;
+  }
 
   function transformContent(
     langFrom: string,
@@ -365,6 +387,7 @@ const translate = <TranslateService["translate"]>async function (data) {
       ],
       generationConfig: {
         maxOutputTokens,
+        ...(getThinkingConfig() ? { thinkingConfig: getThinkingConfig() } : {}),
       },
     }),
     responseType: "text",
@@ -374,7 +397,7 @@ const translate = <TranslateService["translate"]>async function (data) {
       let lastEmittedResult = "";
       let latestResponse = "";
       let parseFrame: number | null = null;
-      const view = typeof window !== "undefined" ? window : undefined;
+      const view = Zotero.getMainWindow?.();
       const cancelParseFrame = () => {
         if (parseFrame === null) {
           return;
@@ -392,7 +415,9 @@ const translate = <TranslateService["translate"]>async function (data) {
         if (!canCommit()) {
           return;
         }
-        const parsedResult = parseGeminiStreamText(latestResponse, true);
+        const parsedResult = stripThinkingTags(
+          parseGeminiStreamText(latestResponse, true),
+        );
         if (parsedResult.length >= result.length) {
           result = parsedResult;
         }
@@ -435,7 +460,9 @@ const translate = <TranslateService["translate"]>async function (data) {
           return;
         }
         latestResponse = xmlhttp.response || latestResponse;
-        const replayed = parseGeminiStreamText(latestResponse, true);
+        const replayed = stripThinkingTags(
+          parseGeminiStreamText(latestResponse, true),
+        );
         if (replayed.length >= result.length) {
           result = replayed;
         }
@@ -490,6 +517,11 @@ export const Gemini: TranslateService = {
       .addCheckboxSetting({
         prefKey: "gemini.stream",
         nameKey: "service-gemini-dialog-stream",
+      })
+      .addSelectSetting({
+        prefKey: "gemini.thinkingLevel",
+        nameKey: "service-gemini-dialog-thinkingLevel",
+        options: getThinkingLevelOptions(),
       });
   },
 };

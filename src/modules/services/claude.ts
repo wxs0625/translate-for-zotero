@@ -1,6 +1,8 @@
 import {
   getPref,
   getString,
+  getThinkingLevelOptions,
+  stripThinkingTags,
   transformPromptWithContext,
   isTaskSnapshotStillActive,
   getActiveReceiveToken,
@@ -24,20 +26,53 @@ function transformContent(
   );
 }
 
+/**
+ * Temperature (and the other sampling params) are deprecated for Claude 4.7
+ * and later models and Claude Mythos Preview.
+ */
+export function modelSupportsTemperature(model: string): boolean {
+  if (/mythos/i.test(model)) {
+    return false;
+  }
+  const version = model.match(/(\d+)(?:[.-](\d+))?/);
+  if (!version) {
+    return true;
+  }
+  const major = parseInt(version[1]);
+  const minor = version[2] ? parseInt(version[2]) : 0;
+  return major < 4 || (major === 4 && minor < 7);
+}
+
 // Removed duplicate implementation in favor of the main claude function
 
 const translate = <TranslateService["translate"]>async function (data) {
   const apiURL = getPref("claude.endPoint") as string;
   const model = getPref("claude.model") as string;
   const temperature = parseFloat(getPref("claude.temperature") as string);
-  const stream = true;
+  const stream = (getPref("claude.stream") as boolean) !== false;
   const maxTokens = parseInt(getPref("claude.maxTokens") as string) || 4000;
+  const thinkingLevel = getPref("claude.thinkingLevel") as string;
 
   const refreshHandler = addon.api.getTemporaryRefreshHandler({ task: data });
   const rawSnapshot = data.raw;
   const receiveToken = getActiveReceiveToken();
   const canCommit = () =>
     isTaskSnapshotStillActive(data, rawSnapshot, receiveToken);
+
+  const thinkingBudgets = { low: 2048, medium: 8192, high: 16384 };
+  let thinking: Record<string, any> | undefined;
+  let effectiveMaxTokens = maxTokens;
+  if (thinkingLevel === "off") {
+    thinking = { type: "disabled" };
+  } else if (
+    thinkingLevel === "low" ||
+    thinkingLevel === "medium" ||
+    thinkingLevel === "high"
+  ) {
+    const budget = thinkingBudgets[thinkingLevel];
+    thinking = { type: "enabled", budget_tokens: budget };
+    effectiveMaxTokens = Math.max(maxTokens, budget + 1024);
+  }
 
   // Pass maxTokens to the request body
   const requestBody = {
@@ -48,9 +83,12 @@ const translate = <TranslateService["translate"]>async function (data) {
         content: transformContent(data.langfrom, data.langto, data.raw, data),
       },
     ],
-    temperature: temperature,
+    ...(modelSupportsTemperature(model) && !Number.isNaN(temperature)
+      ? { temperature }
+      : {}),
     stream: stream,
-    max_tokens: maxTokens,
+    max_tokens: effectiveMaxTokens,
+    ...(thinking ? { thinking } : {}),
   };
 
   const headers = {
@@ -121,7 +159,7 @@ const translate = <TranslateService["translate"]>async function (data) {
             }
 
             // Update the result
-            data.result = result.replace(/^\n\n/, "");
+            data.result = stripThinkingTags(result.replace(/^\n\n/, ""));
             lastEmittedResult = data.result;
 
             // Refresh UI to show progress
@@ -137,7 +175,7 @@ const translate = <TranslateService["translate"]>async function (data) {
             return;
           }
           data.status = "success";
-          const finalResult = result.replace(/^\n\n/, "");
+          const finalResult = stripThinkingTags(result.replace(/^\n\n/, ""));
           if (finalResult !== lastEmittedResult) {
             data.result = finalResult;
             refreshHandler();
@@ -151,8 +189,11 @@ const translate = <TranslateService["translate"]>async function (data) {
           }
           try {
             const responseObj = JSON.parse(xmlhttp.responseText);
-            const resultContent = responseObj.content[0].text;
-            data.result = resultContent.replace(/^\n\n/, "");
+            const textBlock = (responseObj.content || []).find(
+              (block: any) => block.type === "text",
+            );
+            const resultContent = textBlock?.text || "";
+            data.result = stripThinkingTags(resultContent.replace(/^\n\n/, ""));
           } catch (error) {
             data.result = getString("status-translating");
             data.status = "fail";
@@ -231,6 +272,11 @@ export const Claude: TranslateService = {
       .addCheckboxSetting({
         prefKey: "claude.stream",
         nameKey: "service-claude-dialog-stream",
+      })
+      .addSelectSetting({
+        prefKey: "claude.thinkingLevel",
+        nameKey: "service-claude-dialog-thinkingLevel",
+        options: getThinkingLevelOptions(),
       });
   },
 };

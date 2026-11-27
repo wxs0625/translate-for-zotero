@@ -2,15 +2,32 @@ import { franc } from "franc";
 import ISO6393_3_TO_2 from "iso639-js/alpha3to2mapping.json";
 import ISO6393_MACRO_LANGS from "iso639-js/reference/iso639-3-macrolanguages.json";
 
-export function inferLanguage(str: string) {
-  const langCode = mapISO6393to6391(franc(str, { minLength: 3 }));
-  if (!langCode) {
-    return {
-      code: "",
-      name: "Unknown",
-    };
+export function inferLanguage(...candidates: string[]) {
+  // Short strings and document identifiers are weak evidence for overriding a
+  // configured source language. Count letters so this also works without spaces.
+  const minLetters = 40;
+  for (const candidate of candidates) {
+    const text = candidate.normalize("NFKC").trim();
+    const documentName = /\.(?:pdf|epub|djvu)$/i.test(text);
+    const identifier =
+      /^(?:https?:\/\/|doi:|10\.\d{4,9}\/)/i.test(text) ||
+      (!/\s/u.test(text) &&
+        /^[\p{ASCII}]+$/u.test(text) &&
+        /[_/\\]/u.test(text));
+    if (
+      documentName ||
+      identifier ||
+      (text.match(/\p{L}/gu)?.length || 0) < minLetters
+    ) {
+      continue;
+    }
+    const langCode = mapISO6393to6391(franc(text, { minLength: minLetters }));
+    const language = matchLanguage(langCode || "");
+    if (language.code) {
+      return language;
+    }
   }
-  return matchLanguage(langCode);
+  return { code: "", name: "Unknown" };
 }
 
 export function matchLanguage(str: string) {
@@ -61,7 +78,6 @@ export const LANG_CODE = <const>[
   { code: "be-BY", name: "Belarusian (Belarus)" },
   { code: "bn", name: "Bengali" },
   { code: "bho", name: "Bhojpuri" },
-  { code: "bo", name: "Tibetan" },
   { code: "bs", name: "Bosnian" },
   { code: "bs-BA", name: "Bosnian (Bosnia and Herzegovina)" },
   { code: "bg", name: "Bulgarian" },
@@ -217,6 +233,7 @@ export const LANG_CODE = <const>[
   { code: "nn-NO", name: "Norwegian (Nynorsk) (Norway)" },
   { code: "or", name: "Odia (Oriya)" },
   { code: "om", name: "Oromo" },
+  { code: "pli", name: "Pali" },
   { code: "ps", name: "Pashto" },
   { code: "ps-AR", name: "Pashto (Afghanistan)" },
   { code: "pl", name: "Polish" },
@@ -224,7 +241,6 @@ export const LANG_CODE = <const>[
   { code: "pt", name: "Portuguese" },
   { code: "pt-BR", name: "Portuguese (Brazil)" },
   { code: "pt-PT", name: "Portuguese (Portugal)" },
-  { code: "pli", name: "Pali" },
   { code: "pa", name: "Punjabi" },
   { code: "pa-IN", name: "Punjabi (India)" },
   { code: "qu", name: "Quechua" },
@@ -304,6 +320,7 @@ export const LANG_CODE = <const>[
   { code: "te-IN", name: "Telugu (India)" },
   { code: "th", name: "Thai" },
   { code: "th-TH", name: "Thai (Thailand)" },
+  { code: "bo", name: "Tibetan" },
   { code: "ti", name: "Tigrinya" },
   { code: "ts", name: "Tsonga" },
   { code: "tn", name: "Tswana" },

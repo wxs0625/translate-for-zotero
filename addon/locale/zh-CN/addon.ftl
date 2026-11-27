@@ -1,4 +1,4 @@
-﻿service-huoshanweb=火山网页翻译
+service-huoshanweb=火山网页翻译
 service-tencenttransmart=腾讯TranSmart
 service-huoshan=火山翻译
 service-googleapi=Google(API)
@@ -26,32 +26,16 @@ service-chatgpt=ChatGPT
 service-customgpt1=自定义GPT1
 service-customgpt2=自定义GPT2
 service-customgpt3=自定义GPT3
-service-customgpt4=自定义GPT4
-service-customgpt5=自定义GPT5
-service-customgpt6=自定义GPT6
-service-customgpt7=自定义GPT7
-service-customgpt8=自定义GPT8
-service-customgpt9=自定义GPT9
-service-customgpt10=自定义GPT10
-service-customgpt11=自定义GPT11
-service-customgpt12=自定义GPT12
-service-customgpt13=自定义GPT13
-service-customgpt14=自定义GPT14
-service-customgpt15=自定义GPT15
-service-customgpt16=自定义GPT16
-service-customgpt17=自定义GPT17
-service-customgpt18=自定义GPT18
-service-customgpt19=自定义GPT19
-service-customgpt20=自定义GPT20
-service-customgpt-generic=自定义GPT{ $index }
 service-azuregpt=AzureGPT
 service-gemini=Gemini
 service-qwenmt=Qwen-MT
 service-claude=Claude
 service-haici=海词
+service-iciba=金山词霸
 service-bing=必应
 service-pot=Pot
 service-nllb=NLLB
+service-mymemory=MyMemory
 service-bingdict=必应词典(en→zh)🔊
 service-cambridgedict=剑桥词典(en→other)🔊
 service-haicidict=海词词典(en→zh)🔊
@@ -59,12 +43,21 @@ service-collinsdict=科林斯词典(en→zh)🔊
 service-youdaodict=有道词典(en→zh)🔊
 service-freedictionaryapi=FreeDictionaryAPI(en→en)
 service-webliodict=Weblio Dict(en→ja)
+service-gramotadict=Gramota.ru(ru)
 service-errorPrefix=[请求错误]
     此翻译服务不可用，可能是密钥错误，也可能是请求过快。
     可以尝试其他翻译服务，或者来此查看相关回答：
     https://zotero.yuque.com/staff-gkhviy/pdf-trans/age09f
     
     请注意，这些错误与 Zotero 和本翻译插件无关，由该翻译服务引起：
+
+service-niutranspro-error-insufficient-balance=
+    当前小牛翻译积分不足，无法完成翻译请求。
+    请前往小牛翻译充值中心购买积分后重试。
+
+    小牛翻译充值中心：https://niutrans.com/price
+
+    错误代码：{ $code } { $message }
 
 service-dialog-config=配置
 service-dialog-title={ $service } 配置
@@ -74,6 +67,42 @@ service-dialog-help=帮助
 service-dialog-custom-request-description=参考服务提供商的API文档，添加自定义参数。这些参数将与标准参数合并。
 service-dialog-custom-request-title=自定义请求参数
 service-dialog-custom-request-add-param=添加参数
+service-dialog-custom-request-parameter-name=参数名称
+service-dialog-custom-request-parameter-value=参数值
+service-dialog-custom-request-parameter-name-placeholder=参数名称
+service-dialog-custom-request-parameter-value-placeholder=参数值（JSON 格式）
+service-dialog-custom-request-validation-title=无法保存自定义参数
+service-dialog-custom-request-validation-summary=有些参数值不是有效的 JSON，请修改后重试。
+service-dialog-custom-request-validation-errors-head=请检查以下项目：
+service-dialog-custom-request-validation-error-invalid=- { $key }：格式无效（{ $detail }）
+service-dialog-custom-request-validation-error-empty=- { $key }：值为空
+service-dialog-custom-request-validation-error-duplicate=- { $key }：参数名重复
+service-dialog-custom-request-validation-examples-head=“参数值”填写示例：
+service-dialog-custom-request-validation-example-boolean=- 布尔值：false
+service-dialog-custom-request-validation-example-number=- 数字：123
+service-dialog-custom-request-validation-example-string=- 文本："text"
+service-dialog-custom-request-validation-example-object=- 对象：{ $example }
+service-dialog-custom-headers-description=参考服务提供商的API文档，添加自定义请求头（名称不区分大小写）。这些请求头将与标准请求头合并；由插件设置的请求头（Content-Type、Authorization 等）不会被覆盖。
+service-dialog-custom-headers-title=自定义请求头
+service-dialog-custom-headers-add-header=添加请求头
+service-dialog-custom-headers-name=名称
+service-dialog-custom-headers-value=值
+service-dialog-custom-headers-name-placeholder=请求头名称（如 x-opencode-session）
+service-dialog-custom-headers-value-placeholder=请求头的值
+service-dialog-custom-headers-validation-title=无法保存自定义请求头
+service-dialog-custom-headers-validation-summary=有些自定义请求头无效，请修改后重试。
+service-dialog-custom-headers-validation-errors-head=请检查以下项目：
+service-dialog-custom-headers-validation-error-empty=- { $key }：值为空
+service-dialog-custom-headers-validation-error-duplicate=- { $key }：请求头名称重复
+service-dialog-custom-headers-validation-error-invalid-name=- { $key }：请求头名称无效
+service-dialog-api-format-openai=OpenAI（chat/completions）
+service-dialog-api-format-anthropic=Anthropic（messages）
+service-gpt-dialog-thinkingLevel-hint=思考参数格式按接口地址自动识别（OpenAI/Azure、OpenRouter、智谱GLM、DeepSeek、Kimi、豆包、通义）。无法识别的接口（如中转站）不会发送任何思考参数，请通过“自定义请求”手动指定。
+service-dialog-thinking-default=默认
+service-dialog-thinking-off=关闭
+service-dialog-thinking-low=低
+service-dialog-thinking-medium=中
+service-dialog-thinking-high=高
 
 service-niutranspro-dialog-endpoint=接口
 service-niutranspro-dialog-username=用户名
@@ -87,31 +116,40 @@ service-niutranspro-dialog-tip1=小牛翻译云平台
 service-niutranspro-dialog-tip2=进行添加术语词典库
 service-niutranspro-dialog-signin=登录
 service-niutranspro-dialog-refresh=刷新
-service-deeplx-dialog-endPoint=接口
+service-niutranspro-dialog-signout=退出登录
 
-service-deeplcustom-dialog-glossary=术语表
+service-deeplcustom-dialog-endPoint=接口
+service-deeplx-dialog-endPoint=接口
 
 service-chatgpt-dialog-endPoint=接口
 service-chatgpt-dialog-model=模型
 service-chatgpt-dialog-temperature=温度
+service-chatgpt-dialog-apiFormat=接口格式
 service-chatgpt-dialog-prompt=提示词
+service-gpt-dialog-prompt-hint=可用变量：{ $variables }。翻译正文必须使用 { $required }。
+service-gpt-dialog-prompt-required=请加入 { $placeholder }，否则选中的文字不会发送给翻译服务。
+service-gpt-dialog-apiFormat-hint=接口可直接填服务商文档中的基础地址：https://api.deepseek.com 会自动补全为 https://api.deepseek.com/v1/chat/completions（Anthropic 格式补全为 /v1/messages）；已经填写完整地址（如 https://api.openai.com/v1/chat/completions、https://api.openai.com/v1/responses）时按原样使用。Anthropic 格式下密钥以 x-api-key 方式发送。
 service-chatgpt-dialog-stream=流式输出
+service-chatgpt-dialog-thinkingLevel=思考等级
 service-chatgpt-dialog-custom-request=自定义请求
+service-chatgpt-dialog-custom-headers=自定义请求头
 
 service-azuregpt-dialog-endPoint=接口
 service-azuregpt-dialog-model=部署名
 service-azuregpt-dialog-temperature=温度
 service-azuregpt-dialog-stream=流式输出
+service-azuregpt-dialog-thinkingLevel=思考等级
 service-azuregpt-dialog-apiVersion=版本
 service-azuregpt-dialog-prompt=提示词
 service-azuregpt-dialog-custom-request=自定义请求
+service-azuregpt-dialog-custom-headers=自定义请求头
 
 service-xftrans-dialog-engine=翻译引擎
 
 service-gemini-dialog-endPoint=接口
 service-gemini-dialog-prompt=提示词
-service-gemini-dialog-maxOutputTokens=最大输出Token数
 service-gemini-dialog-stream=流式输出
+service-gemini-dialog-thinkingLevel=思考等级
 
 service-qwenmt-dialog-endPoint=API地址
 service-qwenmt-dialog-model=模型
@@ -122,11 +160,14 @@ service-claude-dialog-model=模型
 service-claude-dialog-temperature=温度
 service-claude-dialog-prompt=提示词
 service-claude-dialog-stream=流式输出
+service-claude-dialog-thinkingLevel=思考等级
 service-claude-dialog-maxTokens=最大输出长度
 
 service-cnki-settings=设置
 service-cnki-dialog-regex=CNKI广告移除正则表达式
 service-cnki-dialog-split=超过800字符自动拆分翻译
+
+service-mymemory-dialog-userEmail=输入邮箱每IP每天可享5000字符
 
 service-aliyun-dialog-action=版本
 service-aliyun-dialog-scene=场景
@@ -148,14 +189,7 @@ service-youdaozhiyunllm-dialog-stream=流式输出
 readerpopup-translate-label=翻译
 readerpopup-addToNote-label=添加翻译至笔记
 
-pref-general=通用
 pref-title=翻译
-
-itemmenu-translateTitle-label=翻译标题
-itemmenu-translateAbstract-label=翻译摘要
-itemmenu-more-label=更多翻译选项...
-itemmenu-retranslateTitle-label=重新翻译标题
-itemmenu-retranslateAbstract-label=重新翻译摘要
 
 field-titleTranslation=标题翻译
 field-abstractTranslation=摘要翻译
@@ -188,16 +222,76 @@ service-nllb-dialog-serveendpoint=nllb-serve 接口
 service-nllb-dialog-apilabel=nllb-api 文档
 service-nllb-dialog-servelabel=nllb-serve 文档
 
+service-wordstalk=WordsTalk学术翻译
+service-wordstalk-info=通过下方链接获取个人密钥，填入翻译设置的「密钥」栏，即可选中文字翻译。使用 WordsTalk 付费快速额度。原文含汉字（包括日文汉字）时译为英语，否则译为简体中文；插件的目标语言设置不生效。每次最多 5,000 字符。
+service-wordstalk-error-key=请填写从 https://wordstalk.ai/connect-tools 获取的有效个人密钥，确认完整复制且密钥已启用。
+service-wordstalk-error-empty=请先选中需要翻译的文字。
+service-wordstalk-error-length=WordsTalk 每次最多翻译 5,000 字符，请分段选择。
+service-wordstalk-error-quota=WordsTalk 快速翻译额度不足，请到 WordsTalk 查看余额。
+service-wordstalk-error-request=WordsTalk 无法处理本次翻译请求，请检查选中文字或联系 WordsTalk 支持。
+service-wordstalk-error-rate=WordsTalk 请求过于频繁，请稍后再试。
+service-wordstalk-error-network=WordsTalk 请求未完成。重试前请检查网络和账户额度，后台可能已处理本次请求。
+service-wordstalk-error-server=WordsTalk 返回 HTTP { $status }。重试前请核对额度，或联系 WordsTalk 支持。
+service-wordstalk-error-response=WordsTalk 未返回有效译文。重试前请核对额度，或联系 WordsTalk 支持。
 
+service-customgpt4=自定义GPT4
 
+service-customgpt5=自定义GPT5
 
+service-customgpt6=自定义GPT6
 
+service-customgpt7=自定义GPT7
 
+service-customgpt8=自定义GPT8
 
+service-customgpt9=自定义GPT9
 
-service-deeplcustom-dialog-endPoint=接口
+service-customgpt10=自定义GPT10
+
+service-customgpt11=自定义GPT11
+
+service-customgpt12=自定义GPT12
+
+service-customgpt13=自定义GPT13
+
+service-customgpt14=自定义GPT14
+
+service-customgpt15=自定义GPT15
+
+service-customgpt16=自定义GPT16
+
+service-customgpt17=自定义GPT17
+
+service-customgpt18=自定义GPT18
+
+service-customgpt19=自定义GPT19
+
+service-customgpt20=自定义GPT20
+
+service-customgpt-generic=自定义GPT{ $index }
+
+service-deeplcustom-dialog-glossary=术语表
+
+service-gemini-dialog-maxOutputTokens=最大输出Token数
+
+pref-general=通用
+
+itemmenu-translateTitle-label=翻译标题
+
+itemmenu-translateAbstract-label=翻译摘要
+
+itemmenu-more-label=更多翻译选项...
+
+itemmenu-retranslateTitle-label=重新翻译标题
+
+itemmenu-retranslateAbstract-label=重新翻译摘要
+
 service-fetchModels-title = 获取模型
+
 service-fetchModels-fetching = 正在获取模型…
+
 service-fetchModels-unsupported = 当前服务不支持获取模型列表。
+
 service-fetchModels-failed = 获取模型失败，请检查接口地址和密钥。
+
 service-fetchModels-done = 已获取 { $count } 个模型。

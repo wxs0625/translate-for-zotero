@@ -12,6 +12,10 @@ pref-basic-annotationTranslationInComment =
     .label = Save Translation in Annotation Comment
 pref-basic-annotationTranslationInBody =
     .label = Save Translation in Annotation Body
+pref-basic-annotationTranslationInBodyBeforeText =
+    .label = Before Annotation Text
+pref-basic-annotationTranslationInBodyAfterText =
+    .label = After Annotation Text
 pref-basic-enableAnnotationFromSyncTranslation =
     .label = Automatically Translate Annotation from Sync
 pref-basic-enableNote =
@@ -33,8 +37,6 @@ pref-service-sentenceServices =
     .value = Translation Services
 pref-service-sentenceServicesSecret =
     .value = Secret
-pref-service-customGPTCount =
-    .value = Number of Custom GPT Services (1-100)
 pref-service-attachPaperContext =
     .label = Feed GPT/Claude/Gemini Services with Title and Abstract
 pref-service-useWordService =
@@ -47,10 +49,6 @@ pref-service-langfrom =
     .value = Translate From
 pref-service-langto =
     .value = To
-pref-service-model =
-    .value = Model
-pref-service-fetchModels =
-    .label = Fetch Models
 pref-service-hint =
     .value = Service📍requires custom configuration; 🗝️requires a secret key. See GitHub for details
 
@@ -69,12 +67,6 @@ pref-interface-fontSize =
     .value = Font Size
 pref-interface-lineHeight =
     .value = Line Height
-pref-interface-minResultHeight =
-    .value = Minimum Height of Translation Result (px)
-pref-interface-outputBackgroundColor =
-    .value = Translation Result Background Color
-pref-interface-sourceBackgroundColor =
-    .value = Source Text Box Background Color
 pref-interface-showItemMenu =
     .label = Show Item Context Menu
 pref-interface-showItemMenuTitleTranslation =
@@ -144,3 +136,21 @@ pref-about-version =
 
 pref-advanced-stripEmptyLines =
     .label = Strip empty lines and thinking from translation results
+
+pref-service-customGPTCount =
+    .value = Number of Custom GPT Services (1-100)
+
+pref-service-model =
+    .value = Model
+
+pref-service-fetchModels =
+    .label = Fetch Models
+
+pref-interface-minResultHeight =
+    .value = Minimum Height of Translation Result (px)
+
+pref-interface-outputBackgroundColor =
+    .value = Translation Result Background Color
+
+pref-interface-sourceBackgroundColor =
+    .value = Source Text Box Background Color

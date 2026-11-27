@@ -3,9 +3,9 @@
     "zoteropdftranslate@euclpts.com": {
       "updates": [
         {
-          "version": "6.2.7",
-          "update_link": "https://github.com/wxs0625/translate-for-zotero/releases/download/v6.2.7/translate-for-zotero.xpi",
-          "update_hash": "sha512:ce5f4385b82df965c114e1a8b2b6bd520d38da46006dcc9d79ccfd9c1bdfe42ddbdc7211c5e1ce8c8286edd62dd60d41078f3fb636eb4f821d8a747683b44a40",
+          "version": "6.2.8",
+          "update_link": "https://github.com/wxs0625/translate-for-zotero/releases/download/v6.2.8/translate-for-zotero.xpi",
+          "update_hash": "sha512:b71ccd00aed62f0af6af09d57d68c073ae865a0e2cca05379fad30b72cb147b76a0667c5f3b83c899ddb821314669f29f6d5262f526aae70685368c3c330fda5",
           "applications": {
             "zotero": {
               "strict_min_version": "6.9.9",

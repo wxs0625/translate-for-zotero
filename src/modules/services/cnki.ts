@@ -7,6 +7,30 @@ import {
 import { getPref, getPrefJSON, setPref } from "../../utils/prefs";
 import { TranslateService } from "./base";
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 500;
+
+async function requestWithRetry<T>(
+  fn: () => Promise<T>,
+  retries = MAX_RETRIES,
+) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastError = e;
+      if (attempt === retries) {
+        throw e;
+      }
+      await new Promise((resolve) =>
+        setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)),
+      );
+    }
+  }
+  throw lastError;
+}
+
 const CNKI_MAX_CHUNK_CHARS = 800;
 const CNKI_CONCURRENCY = 3;
 const CJK_CHAR_REGEX = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/u;
@@ -112,23 +136,26 @@ const translate = <TranslateService["translate"]>async function (data) {
     allowTokenRetry = true,
   ): Promise<string> => {
     const token = await getToken();
-    const xhr = await Zotero.HTTP.request(
-      "POST",
-      "https://dict.cnki.net/fyzs-front-api/translate/literaltranslation",
-      {
-        headers: {
-          "Content-Type": "application/json;charset=UTF-8",
-          Token: token,
+    const words = await getWord(text);
+    const xhr = await requestWithRetry(() =>
+      Zotero.HTTP.request(
+        "POST",
+        "https://dict.cnki.net/fyzs-front-api/translate/literaltranslation",
+        {
+          headers: {
+            "Content-Type": "application/json;charset=UTF-8",
+            Token: token,
+          },
+          body: JSON.stringify({
+            words,
+            translateType: null,
+          }),
+          responseType: "json",
+          requestObserver: (xmlhttp: XMLHttpRequest) => {
+            registerActiveRequest(xmlhttp);
+          },
         },
-        body: JSON.stringify({
-          words: await getWord(text),
-          translateType: null,
-        }),
-        responseType: "json",
-        requestObserver: (xmlhttp: XMLHttpRequest) => {
-          registerActiveRequest(xmlhttp);
-        },
-      },
+      ),
     );
 
     if (xhr?.status !== 200) {
@@ -248,12 +275,14 @@ export async function getToken(forceRefresh: boolean = false) {
     ztoolkit.log(e);
   }
   if (doRefresh) {
-    const xhr = await Zotero.HTTP.request(
-      "GET",
-      "https://dict.cnki.net/fyzs-front-api/getToken",
-      {
-        responseType: "json",
-      },
+    const xhr = await requestWithRetry(() =>
+      Zotero.HTTP.request(
+        "GET",
+        "https://dict.cnki.net/fyzs-front-api/getToken",
+        {
+          responseType: "json",
+        },
+      ),
     );
     if (xhr && xhr.response && xhr.response.code === 200 && xhr.response.data) {
       token = xhr.response.data;

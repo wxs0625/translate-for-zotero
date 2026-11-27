@@ -47,7 +47,7 @@ export function transformPromptWithContext(
 ): string {
   const { appendSourceTextIfMissing = true } = options;
   const prompt = (getPref(prefKey) as string) || "";
-  let sourcePayload = sourceText;
+  const sourcePayload = sourceText;
   let contextPrompt = "";
 
   if (getPref("attachPaperContext") && data.itemId) {
@@ -91,4 +91,53 @@ export function transformPromptWithContext(
     : appendSourceTextIfMissing
       ? `${promptWithPlaceholders}\n\n${sourcePayload}`
       : promptWithPlaceholders;
+}
+
+/**
+ * Split the prompt template into a system instruction and a user content.
+ * Supports templates both with and without ${sourceText}.
+ */
+export function buildPromptParts(
+  prefKey: string,
+  langFrom: string,
+  langTo: string,
+  sourceText: string,
+  data: Required<TranslateTask>,
+): { system: string; user: string } {
+  const prompt = (getPref(prefKey) as string) || "";
+  const marker = "${sourceText}";
+  const markerIndex = prompt.indexOf(marker);
+  const before = markerIndex >= 0 ? prompt.slice(0, markerIndex) : prompt;
+  const after =
+    markerIndex >= 0 ? prompt.slice(markerIndex + marker.length) : "";
+
+  let instruction = `${before.trimEnd()} ${after.trimStart()}`
+    .replaceAll("${langFrom}", langFrom)
+    .replaceAll("${langTo}", langTo)
+    .trim();
+
+  if (getPref("attachPaperContext") && data.itemId) {
+    const item = Zotero.Items.get(data.itemId);
+    const topItem = item ? Zotero.Items.getTopLevel([item])[0] : null;
+    if (topItem) {
+      let contextInfo = "";
+      const title = topItem.getField("title") as string;
+      const abstract = topItem.getField("abstractNote") as string;
+
+      if (title) {
+        contextInfo += `Paper Title: ${title}`;
+      }
+      if (abstract) {
+        contextInfo += title
+          ? `\n\nPaper Abstract: ${abstract}`
+          : `Paper Abstract: ${abstract}`;
+      }
+
+      if (contextInfo) {
+        instruction += `\n\nContext from the academic paper:\n${contextInfo}`;
+      }
+    }
+  }
+
+  return { system: instruction, user: sourceText };
 }

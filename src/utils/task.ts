@@ -109,6 +109,43 @@ export type TranslateTaskProcessor = (
   data: Required<TranslateTask>,
 ) => Promise<void> | void;
 
+export class TranslateError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TranslateError";
+  }
+}
+
+export function maskAccessToken(
+  token: string,
+  options: { visibleChars?: number } = {},
+): string {
+  if (!token) {
+    return token;
+  }
+
+  const length = token.length;
+  const visible = Math.max(0, options.visibleChars ?? 4);
+  const maskedLength = length - visible * 2;
+  if (maskedLength <= 0) {
+    return "*".repeat(length);
+  }
+
+  return `${token.slice(0, visible)}${"*".repeat(maskedLength)}${token.slice(
+    length - visible,
+  )}`;
+}
+
+export function sanitizeTaskForLog(task: TranslateTask): TranslateTask {
+  return {
+    ...task,
+    ...(task.secret ? { secret: maskAccessToken(task.secret) } : {}),
+    extraTasks: (task.extraTasks ?? []).map((extraTask) =>
+      sanitizeTaskForLog(extraTask),
+    ) as TranslateTask["extraTasks"],
+  };
+}
+
 export class TranslateTaskRunner {
   protected processor: TranslateTaskProcessor;
   protected canCommit?: () => boolean;
@@ -124,13 +161,15 @@ export class TranslateTaskRunner {
     if (!data.langfrom || !data.langto) {
       ztoolkit.log("try auto detect language");
       const { fromLanguage, toLanguage, isInferred } = autoDetectLanguage(
-        Zotero.Items.get(data.itemId || -1),
+        Zotero.Items.get(data.itemId || -1) || null,
       );
-      data.langfrom = data.langfrom || fromLanguage;
-      data.langto = data.langto || toLanguage;
-      if (isInferred) {
-        data.langfromInferred = true;
+      if (!data.langfrom) {
+        data.langfrom = fromLanguage;
+        if (isInferred) {
+          data.langfromInferred = true;
+        }
       }
+      data.langto = data.langto || toLanguage;
     }
 
     // If the task is not new, update language settings
@@ -143,7 +182,7 @@ export class TranslateTaskRunner {
     data.secret = getServiceSecret(data.service);
     data.status = "processing";
     try {
-      ztoolkit.log(data);
+      ztoolkit.log(sanitizeTaskForLog(data));
       await this.processor(data as Required<TranslateTask>);
       if (this.canCommit && !this.canCommit()) {
         return;
@@ -153,7 +192,11 @@ export class TranslateTaskRunner {
       if (this.canCommit && !this.canCommit()) {
         return;
       }
-      data.result = this.makeErrorInfo(data.service, String(e));
+      if (e instanceof TranslateError) {
+        data.result = e.message;
+      } else {
+        data.result = this.makeErrorInfo(data.service, String(e));
+      }
       data.status = "fail";
     }
     data.processed = true;
@@ -180,10 +223,10 @@ export function addTranslateTask(
   type = type || "text";
   // Filter raw string
 
-  // eslint-disable-next-line no-control-regex
   raw = raw
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
+    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/gu, " ")
     .normalize("NFKC");
 
@@ -224,13 +267,7 @@ export function addTranslateTask(
     return lastTask;
   }
 
-  return createTextTask(
-    addon,
-    raw,
-    itemId,
-    service,
-    type,
-  );
+  return createTextTask(addon, raw, itemId, service, type);
 }
 
 function createTextTask(
@@ -366,19 +403,30 @@ export function addTranslateAbstractTask(
   }
 }
 
+const segmenter = new Intl.Segmenter(undefined, { granularity: "word" });
+
 function setDefaultService(task: TranslateTask) {
-  // Use wordService(dictSource) for single word translation
-  if (
-    getPref("enableDict") &&
-    task.raw.trim().split(/[^a-zA-Z]+/).length == 1
-  ) {
-    task.service = getPref("dictSource") as string;
-    task.candidateServices.push(getPref("translateSource") as string);
+  if (getPref("enableDict")) {
+    let wordCount = 0;
+    for (const s of segmenter.segment(task.raw.trim())) {
+      if (s.isWordLike) {
+        if (wordCount >= 1) {
+          wordCount = 2;
+          break;
+        }
+        wordCount = 1;
+      }
+    }
+    if (wordCount === 1) {
+      task.service = getPref("dictSource") as string;
+      task.candidateServices.push(getPref("translateSource") as string);
+    } else {
+      task.service = getPref("translateSource") as string;
+    }
   } else {
     task.service = getPref("translateSource") as string;
   }
 
-  // In case service is still empty
   task.service =
     task.service || addon.data.translate.services.getAllServices()[0].id;
 }
@@ -564,19 +612,14 @@ export function autoDetectLanguage(item: Zotero.Item | null) {
         matchLanguage((topItem.getField("language") as string) || "").code;
       ztoolkit.log("try itemLanguage", itemLanguage);
       if (!itemLanguage) {
-        // Respect AbstractNote or Title inferred language
+        // Try the title as well when the abstract is insufficient evidence.
         const inferredLanguage = inferLanguage(
-          (topItem.getField("abstractNote") as string) ||
-            (topItem.getField("title") as string) ||
-            "",
+          (topItem.getField("abstractNote") as string) || "",
+          (topItem.getField("title") as string) || "",
         ).code;
         ztoolkit.log("try inferredLanguage", inferredLanguage);
         if (inferredLanguage) {
-          // Update language field so that it can be used in the future
           itemLanguage = inferredLanguage;
-          if (topItem.isRegularItem()) {
-            topItem.setField("language", fromLanguage);
-          }
         }
       }
       const itemLanguageMajor = itemLanguage.split("-")[0];

@@ -99,6 +99,16 @@ export function updateReaderPopup(taskId?: string) {
   const hideTranslateButton = task.status !== "waiting";
   updateHidden(translateButton, hideTranslateButton);
 
+  switch (task.langto?.split("-")[0]) {
+    case "ar":
+    case "fa":
+    case "he":
+      textarea.style.direction = "rtl";
+      break;
+    default:
+      textarea.style.direction = "ltr";
+  }
+
   textarea.hidden = hidePopupTextarea || !hideTranslateButton;
   textarea.value = task.result || task.raw;
   textarea.style.fontSize = `${getPref("fontSize")}px`;
@@ -110,10 +120,7 @@ export function updateReaderPopup(taskId?: string) {
 
   const enableAddToNote = getPref("enableNote") as boolean;
   const contextPane = Zotero.getMainWindow().ZoteroContextPane;
-  if (
-    !contextPane?.activeEditor ||
-    !enableAddToNote
-  ) {
+  if (!contextPane?.activeEditor || !enableAddToNote) {
     updateHidden(addToNoteButton, true);
   }
 
@@ -149,6 +156,7 @@ export function buildReaderPopup(
 
   const makeId = (type: string) =>
     `${config.addonRef}-${reader._instanceID}-${type}`;
+  const onTextAreaCopy = getOnTextAreaCopy(popup, makeId("text"));
 
   const hidePopupTextarea = getPref("enableHidePopupTextarea") as boolean;
   append(
@@ -225,7 +233,8 @@ export function buildReaderPopup(
             )}px`,
             marginInline: "2px",
             border: "none",
-            background: (getPref("outputBackgroundColor") as string) || "#ffffff",
+            background:
+              (getPref("outputBackgroundColor") as string) || "#ffffff",
             borderRadius: "6px",
             padding: "5px",
           },
@@ -254,6 +263,10 @@ export function buildReaderPopup(
                   onTextAreaResize as (ev: Event) => void,
                 );
               },
+            },
+            {
+              type: "keydown",
+              listener: onTextAreaCopy as (ev: Event) => void,
             },
             {
               type: "dblclick",

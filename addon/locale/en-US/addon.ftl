@@ -26,32 +26,16 @@ service-chatgpt=ChatGPT
 service-customgpt1=Custom GPT 1
 service-customgpt2=Custom GPT 2
 service-customgpt3=Custom GPT 3
-service-customgpt4=Custom GPT 4
-service-customgpt5=Custom GPT 5
-service-customgpt6=Custom GPT 6
-service-customgpt7=Custom GPT 7
-service-customgpt8=Custom GPT 8
-service-customgpt9=Custom GPT 9
-service-customgpt10=Custom GPT 10
-service-customgpt11=Custom GPT 11
-service-customgpt12=Custom GPT 12
-service-customgpt13=Custom GPT 13
-service-customgpt14=Custom GPT 14
-service-customgpt15=Custom GPT 15
-service-customgpt16=Custom GPT 16
-service-customgpt17=Custom GPT 17
-service-customgpt18=Custom GPT 18
-service-customgpt19=Custom GPT 19
-service-customgpt20=Custom GPT 20
-service-customgpt-generic=Custom GPT { $index }
 service-azuregpt=AzureGPT
 service-gemini=Gemini
 service-qwenmt=Qwen-MT
 service-claude=Claude
 service-haici=Haici
+service-iciba=iCIBA
 service-bing=Bing
 service-pot=Pot
 service-nllb=NLLB
+service-mymemory=MyMemory
 service-bingdict=Bing Dict(en→zh)🔊
 service-cambridgedict=Cambridge Dict(en→other)🔊
 service-haicidict=Haici Dict(en→zh)🔊
@@ -59,12 +43,21 @@ service-collinsdict=Collins Dict(en→zh)🔊
 service-youdaodict=Youdao Dict(en→zh)🔊
 service-freedictionaryapi=FreeDictionaryAPI(en→en)
 service-webliodict=Weblio Dict(en→ja)
+service-gramotadict=Gramota.ru(ru)
 service-errorPrefix=[Request Error]
     Service not available, invalid secret, or request too fast.
     Use another translation service or post the issue here: 
     https://github.com/windingwind/zotero-pdf-translate/issues
     
     The message below is not Zotero or the Translate plugin, but from
+
+service-niutranspro-error-insufficient-balance=
+    The current NiuTrans points balance is insufficient, so the translation request cannot be completed.
+    Please purchase points from the NiuTrans recharge center and try again.
+
+    NiuTrans recharge center: https://niutrans.com/price
+
+    Error code: { $code } { $message }
 
 service-dialog-config=Config
 service-dialog-title={ $service } Config
@@ -74,6 +67,42 @@ service-dialog-help=Help
 service-dialog-custom-request-description=Refer to API documentation of service provider, add custom parameters. These will be merged with the standard parameters (model, messages, temperature, stream).
 service-dialog-custom-request-title=Custom Request Parameters
 service-dialog-custom-request-add-param=Add Parameter
+service-dialog-custom-request-parameter-name=Parameter Name
+service-dialog-custom-request-parameter-value=Parameter Value
+service-dialog-custom-request-parameter-name-placeholder=Parameter name
+service-dialog-custom-request-parameter-value-placeholder=Parameter value (JSON format)
+service-dialog-custom-request-validation-title=Can't Save Custom Parameters
+service-dialog-custom-request-validation-summary=Some parameter values are not valid JSON. Please fix them and try again.
+service-dialog-custom-request-validation-errors-head=Please check:
+service-dialog-custom-request-validation-error-invalid=- { $key }: invalid format ({ $detail })
+service-dialog-custom-request-validation-error-empty=- { $key }: value is empty
+service-dialog-custom-request-validation-error-duplicate=- { $key }: duplicate parameter name
+service-dialog-custom-request-validation-examples-head=Examples for the value field:
+service-dialog-custom-request-validation-example-boolean=- Boolean: false
+service-dialog-custom-request-validation-example-number=- Number: 123
+service-dialog-custom-request-validation-example-string=- Text: "text"
+service-dialog-custom-request-validation-example-object=- Object: { $example }
+service-dialog-custom-headers-description=Refer to API documentation of service provider, add custom request headers (names are case-insensitive). These will be merged with the standard headers; headers set by the plugin (Content-Type, Authorization, etc.) cannot be overridden.
+service-dialog-custom-headers-title=Custom Request Headers
+service-dialog-custom-headers-add-header=Add Header
+service-dialog-custom-headers-name=Header Name
+service-dialog-custom-headers-value=Header Value
+service-dialog-custom-headers-name-placeholder=Header name (e.g. x-opencode-session)
+service-dialog-custom-headers-value-placeholder=Header value
+service-dialog-custom-headers-validation-title=Can't Save Custom Headers
+service-dialog-custom-headers-validation-summary=Some custom headers are not valid. Please fix them and try again.
+service-dialog-custom-headers-validation-errors-head=Please check:
+service-dialog-custom-headers-validation-error-empty=- { $key }: value is empty
+service-dialog-custom-headers-validation-error-duplicate=- { $key }: duplicate header name
+service-dialog-custom-headers-validation-error-invalid-name=- { $key }: invalid header name
+service-dialog-api-format-openai=OpenAI (chat/completions)
+service-dialog-api-format-anthropic=Anthropic (messages)
+service-gpt-dialog-thinkingLevel-hint=The thinking parameter format is auto-detected from the endpoint (OpenAI/Azure, OpenRouter, GLM, DeepSeek, Kimi, Doubao, Qwen). Nothing is sent for unrecognized endpoints (e.g. relays) — use Custom Request to set the parameter manually.
+service-dialog-thinking-default=Default
+service-dialog-thinking-off=Off
+service-dialog-thinking-low=Low
+service-dialog-thinking-medium=Medium
+service-dialog-thinking-high=High
 
 service-niutranspro-dialog-endpoint=Endpoint
 service-niutranspro-dialog-username=Username
@@ -90,15 +119,20 @@ service-niutranspro-dialog-refresh=Refresh
 service-niutranspro-dialog-signout=Sign Out
 
 service-deeplcustom-dialog-endPoint=EndPoint
-service-deeplcustom-dialog-glossary=Glossary
 service-deeplx-dialog-endPoint=EndPoint
 
 service-chatgpt-dialog-endPoint=API
 service-chatgpt-dialog-model=Model
 service-chatgpt-dialog-temperature=Temp
+service-chatgpt-dialog-apiFormat=API Format
 service-chatgpt-dialog-prompt=Prompt
+service-gpt-dialog-prompt-hint=Available variables: { $variables }. { $required } is required.
+service-gpt-dialog-prompt-required=Please add { $placeholder } so the selected text can be sent for translation.
+service-gpt-dialog-apiFormat-hint=The EndPoint accepts the base URL from the provider docs: https://api.deepseek.com becomes https://api.deepseek.com/v1/chat/completions (Anthropic format: https://api.anthropic.com/v1/messages). Any already complete URL, e.g. https://api.openai.com/v1/chat/completions or https://api.openai.com/v1/responses, is used as typed. For the Anthropic format the key is sent as x-api-key.
 service-chatgpt-dialog-stream=Stream
+service-chatgpt-dialog-thinkingLevel=Thinking
 service-chatgpt-dialog-custom-request=Custom Request
+service-chatgpt-dialog-custom-headers=Custom Request Headers
 
 service-azuregpt-dialog-endPoint=EndPoint
 service-azuregpt-dialog-model=Name
@@ -106,14 +140,16 @@ service-azuregpt-dialog-temperature=Temp
 service-azuregpt-dialog-apiVersion=Version
 service-azuregpt-dialog-prompt=Prompt
 service-azuregpt-dialog-stream=Stream
+service-azuregpt-dialog-thinkingLevel=Thinking
 service-azuregpt-dialog-custom-request=Custom Request
+service-azuregpt-dialog-custom-headers=Custom Request Headers
 
 service-xftrans-dialog-engine=API Engine
 
 service-gemini-dialog-endPoint=EndPoint
 service-gemini-dialog-prompt=Prompt
-service-gemini-dialog-maxOutputTokens=Max Output Tokens
 service-gemini-dialog-stream=Stream
+service-gemini-dialog-thinkingLevel=Thinking
 
 service-qwenmt-dialog-endPoint=EndPoint
 service-qwenmt-dialog-model=Model
@@ -124,11 +160,14 @@ service-claude-dialog-model=Model
 service-claude-dialog-temperature=Temp
 service-claude-dialog-prompt=Prompt
 service-claude-dialog-stream=Stream
+service-claude-dialog-thinkingLevel=Thinking
 service-claude-dialog-maxTokens=Max Tokens
 
 service-cnki-settings=Settings
 service-cnki-dialog-regex=CNKI Addvertisements Regex
 service-cnki-dialog-split=Automatically split translation for more than 800 characters
+
+service-mymemory-dialog-userEmail=Free upgrade: enter email for 5K chars/day per IP
 
 service-aliyun-dialog-action=Action
 service-aliyun-dialog-scene=Scene
@@ -151,12 +190,6 @@ readerpopup-translate-label=Translate
 readerpopup-addToNote-label=Add Translation to Note
 
 pref-title=Translate
-
-itemmenu-translateTitle-label=Translate Title
-itemmenu-translateAbstract-label=Translate Abstract
-itemmenu-more-label=More Translation Options...
-itemmenu-retranslateTitle-label=Retranslate Title
-itemmenu-retranslateAbstract-label=Retranslate Abstract
 
 field-titleTranslation=Title Translation
 field-abstractTranslation=Abstract Translation
@@ -188,8 +221,75 @@ service-nllb-dialog-apistream=nllb-api Stream
 service-nllb-dialog-serveendpoint=nllb-serve EndPoint
 service-nllb-dialog-apilabel=nllb-api Docs
 service-nllb-dialog-servelabel=nllb-serve Docs
+
+service-wordstalk=WordsTalk Academic Translation
+service-wordstalk-info=Get a personal key from the link below, paste it into the Secret field in Translation settings, then select text to translate. Uses paid WordsTalk fast-translation quota. Text containing Chinese characters (including Japanese kanji) is translated into English; other text into simplified Chinese. The target-language setting does not apply. Up to 5,000 characters per request.
+service-wordstalk-error-key=Enter an enabled WordsTalk personal key from https://wordstalk.ai/connect-tools. Check that the full key was copied correctly.
+service-wordstalk-error-empty=Select some text to translate.
+service-wordstalk-error-length=WordsTalk allows up to 5,000 characters per request. Select a shorter passage.
+service-wordstalk-error-quota=Your WordsTalk fast-translation quota is insufficient. Check your balance on WordsTalk.
+service-wordstalk-error-request=WordsTalk could not accept this translation request. Check the selected text or contact WordsTalk support.
+service-wordstalk-error-rate=WordsTalk is receiving too many requests. Please wait before trying again.
+service-wordstalk-error-network=The WordsTalk request did not complete. Check your connection and account balance before retrying; the server may already have processed it.
+service-wordstalk-error-server=WordsTalk returned HTTP { $status }. Check your balance or contact WordsTalk support before retrying.
+service-wordstalk-error-response=WordsTalk returned no valid translation. Check your balance or contact WordsTalk support before retrying.
+
+service-customgpt4=Custom GPT 4
+
+service-customgpt5=Custom GPT 5
+
+service-customgpt6=Custom GPT 6
+
+service-customgpt7=Custom GPT 7
+
+service-customgpt8=Custom GPT 8
+
+service-customgpt9=Custom GPT 9
+
+service-customgpt10=Custom GPT 10
+
+service-customgpt11=Custom GPT 11
+
+service-customgpt12=Custom GPT 12
+
+service-customgpt13=Custom GPT 13
+
+service-customgpt14=Custom GPT 14
+
+service-customgpt15=Custom GPT 15
+
+service-customgpt16=Custom GPT 16
+
+service-customgpt17=Custom GPT 17
+
+service-customgpt18=Custom GPT 18
+
+service-customgpt19=Custom GPT 19
+
+service-customgpt20=Custom GPT 20
+
+service-customgpt-generic=Custom GPT { $index }
+
+service-deeplcustom-dialog-glossary=Glossary
+
+service-gemini-dialog-maxOutputTokens=Max Output Tokens
+
+itemmenu-translateTitle-label=Translate Title
+
+itemmenu-translateAbstract-label=Translate Abstract
+
+itemmenu-more-label=More Translation Options...
+
+itemmenu-retranslateTitle-label=Retranslate Title
+
+itemmenu-retranslateAbstract-label=Retranslate Abstract
+
 service-fetchModels-title = Fetch Models
+
 service-fetchModels-fetching = Fetching models…
+
 service-fetchModels-unsupported = The current service does not support fetching models.
+
 service-fetchModels-failed = Failed to fetch models. Check the endpoint and secret.
+
 service-fetchModels-done = Fetched { $count } models.

@@ -31,7 +31,8 @@ export function registerShortcuts() {
       }
       if (data.keyboard?.equals("accel,T")) {
         const isReaderWindow =
-          ev.target?.ownerGlobal?.location?.href ===
+          ((ev.target as Element | null)?.ownerDocument?.location?.href ||
+            ev.target?.ownerGlobal?.location?.href) ===
           "chrome://zotero/content/reader.xhtml";
         if (!isReaderWindow) {
           addon.hooks.onShortcuts(

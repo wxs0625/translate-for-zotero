@@ -26,32 +26,16 @@ service-chatgpt=ChatGPT
 service-customgpt1=Custom GPT 1
 service-customgpt2=Custom GPT 2
 service-customgpt3=Custom GPT 3
-service-customgpt4=Custom GPT 4
-service-customgpt5=Custom GPT 5
-service-customgpt6=Custom GPT 6
-service-customgpt7=Custom GPT 7
-service-customgpt8=Custom GPT 8
-service-customgpt9=Custom GPT 9
-service-customgpt10=Custom GPT 10
-service-customgpt11=Custom GPT 11
-service-customgpt12=Custom GPT 12
-service-customgpt13=Custom GPT 13
-service-customgpt14=Custom GPT 14
-service-customgpt15=Custom GPT 15
-service-customgpt16=Custom GPT 16
-service-customgpt17=Custom GPT 17
-service-customgpt18=Custom GPT 18
-service-customgpt19=Custom GPT 19
-service-customgpt20=Custom GPT 20
-service-customgpt-generic=Custom GPT { $index }
 service-azuregpt=AzureGPT
 service-gemini=Gemini
 service-qwenmt=Qwen-MT
 service-claude=Claude
 service-haici=Haici
+service-iciba=iCIBA
 service-bing=Bing
 service-pot=Pot
 service-nllb=NLLB
+service-mymemory=MyMemory
 service-bingdict=Bing Dict(en→zh)🔊
 service-cambridgedict=Cambridge Dict(en→other)🔊
 service-haicidict=Haici Dict(en→zh)🔊
@@ -59,12 +43,21 @@ service-collinsdict=Collins Dict(en→zh)🔊
 service-youdaodict=Youdao Dict(en→zh)🔊
 service-freedictionaryapi=FreeDictionaryAPI(en→en)
 service-webliodict=Weblio Dict(en→ja)
+service-gramotadict=Gramota.ru(ru)
 service-errorPrefix=[Errore nella richiesta]
     Servizio di traduzione non disponibile, segreto non valido, o richiesta troppo rapida.
     Si prega di usare un altro servizio di traduzione o di segnalare il problema qui: 
     https://github.com/windingwind/zotero-pdf-translate/issues
     
     Il messaggio seguente non è di Zotero o dell'estensione Translate ma proviene da
+
+service-niutranspro-error-insufficient-balance=
+    Il saldo punti NiuTrans non è sufficiente per completare la richiesta di traduzione.
+    Acquista punti nel centro ricariche NiuTrans e riprova.
+
+    Centro ricariche NiuTrans: https://niutrans.com/price
+
+    Codice errore: { $code } { $message }
 
 service-dialog-config=Config
 service-dialog-title={ $service } Config
@@ -74,6 +67,29 @@ service-dialog-help=Help
 service-dialog-custom-request-description=Refer to API documentation of service provider, add custom parameters. These will be merged with the standard parameters (model, messages, temperature, stream).
 service-dialog-custom-request-title=Custom Request Parameters
 service-dialog-custom-request-add-param=Add Parameter
+service-dialog-custom-request-parameter-name=Nome parametro
+service-dialog-custom-request-parameter-value=Valore parametro
+service-dialog-custom-request-parameter-name-placeholder=Nome parametro
+service-dialog-custom-request-parameter-value-placeholder=Valore parametro (formato JSON)
+service-dialog-custom-request-validation-title=Can't Save Custom Parameters
+service-dialog-custom-request-validation-summary=Some parameter values are not valid JSON. Please fix them and try again.
+service-dialog-custom-request-validation-errors-head=Please check:
+service-dialog-custom-request-validation-error-invalid=- { $key }: invalid format ({ $detail })
+service-dialog-custom-request-validation-error-empty=- { $key }: value is empty
+service-dialog-custom-request-validation-error-duplicate=- { $key }: duplicate parameter name
+service-dialog-custom-request-validation-examples-head=Examples for the value field:
+service-dialog-custom-request-validation-example-boolean=- Boolean: false
+service-dialog-custom-request-validation-example-number=- Number: 123
+service-dialog-custom-request-validation-example-string=- Text: "text"
+service-dialog-custom-request-validation-example-object=- Object: { $example }
+service-dialog-api-format-openai=OpenAI (chat/completions)
+service-dialog-api-format-anthropic=Anthropic (messages)
+service-gpt-dialog-thinkingLevel-hint=Il formato del parametro di ragionamento viene rilevato automaticamente dall'endpoint (OpenAI/Azure, OpenRouter, GLM, DeepSeek, Kimi, Doubao, Qwen). Per endpoint non riconosciuti (es. relay) non viene inviato alcun parametro: usa Custom Request per impostarlo manualmente.
+service-dialog-thinking-default=Predefinito
+service-dialog-thinking-off=Disattivato
+service-dialog-thinking-low=Basso
+service-dialog-thinking-medium=Medio
+service-dialog-thinking-high=Alto
 
 service-niutranspro-dialog-endpoint=Endpoint
 service-niutranspro-dialog-username=Nome utente
@@ -90,14 +106,18 @@ service-niutranspro-dialog-refresh=Aggiorna
 service-niutranspro-dialog-signout=Esci
 
 service-deeplcustom-dialog-endPoint=EndPoint
-service-deeplcustom-dialog-glossary=Glossario
 service-deeplx-dialog-endPoint=API
 
 service-chatgpt-dialog-endPoint=API
 service-chatgpt-dialog-model=Modello
 service-chatgpt-dialog-temperature=Temperatura
+service-chatgpt-dialog-apiFormat=Formato API
 service-chatgpt-dialog-prompt=Prompt
+service-gpt-dialog-prompt-hint=Variabili disponibili: { $variables }. { $required } è obbligatorio.
+service-gpt-dialog-prompt-required=Aggiungi { $placeholder } per inviare il testo selezionato al servizio di traduzione.
+service-gpt-dialog-apiFormat-hint=L'endpoint accetta l'URL di base della documentazione del provider: https://api.deepseek.com diventa https://api.deepseek.com/v1/chat/completions (formato Anthropic: https://api.anthropic.com/v1/messages). Un URL già completo, ad es. https://api.openai.com/v1/chat/completions o https://api.openai.com/v1/responses, viene usato così com'è. Nel formato Anthropic la chiave viene inviata come x-api-key.
 service-chatgpt-dialog-stream=Stream
+service-chatgpt-dialog-thinkingLevel=Ragionamento
 service-chatgpt-dialog-custom-request=Custom Request
 
 service-azuregpt-dialog-endPoint=EndPoint
@@ -106,14 +126,15 @@ service-azuregpt-dialog-temperature=Temperatura
 service-azuregpt-dialog-apiVersion=Versione
 service-azuregpt-dialog-prompt=Prompt
 service-azuregpt-dialog-stream=Stream
+service-azuregpt-dialog-thinkingLevel=Ragionamento
 service-azuregpt-dialog-custom-request=Custom Request
 
 service-xftrans-dialog-engine=API Engine
 
 service-gemini-dialog-endPoint=EndPoint
 service-gemini-dialog-prompt=Prompt
-service-gemini-dialog-maxOutputTokens=Token di output massimi
 service-gemini-dialog-stream=Stream
+service-gemini-dialog-thinkingLevel=Ragionamento
 
 service-qwenmt-dialog-endPoint=EndPoint
 service-qwenmt-dialog-model=Model
@@ -124,11 +145,14 @@ service-claude-dialog-model=Model
 service-claude-dialog-temperature=Temp
 service-claude-dialog-prompt=Prompt
 service-claude-dialog-stream=Stream
+service-claude-dialog-thinkingLevel=Ragionamento
 service-claude-dialog-maxTokens=Max Tokens
 
 service-cnki-settings=Impostazioni
 service-cnki-dialog-regex=Regex per gli annunci CNKI
 service-cnki-dialog-split=Dividi automaticamente la traduzione per più di 800 caratteri
+
+service-mymemory-dialog-userEmail=Free upgrade: enter email for 5K chars/day per IP
 
 service-aliyun-dialog-action=Azione
 service-aliyun-dialog-scene=Scena
@@ -151,12 +175,6 @@ readerpopup-translate-label=Traduci
 readerpopup-addToNote-label=Aggiungi traduzione alla nota
 
 pref-title=Translate
-
-itemmenu-translateTitle-label=Traduci Titolo
-itemmenu-translateAbstract-label=Traduci Abstract
-itemmenu-more-label=Altre opzioni di traduzione...
-itemmenu-retranslateTitle-label=Ritraduci Titolo
-itemmenu-retranslateAbstract-label=Ritraduci Abstract
 
 field-titleTranslation=Traduzione del titolo
 field-abstractTranslation=Traduzione dell'Abstract
@@ -188,8 +206,65 @@ service-nllb-dialog-apistream=nllb-api Stream
 service-nllb-dialog-serveendpoint=nllb-serve EndPoint
 service-nllb-dialog-apilabel=nllb-api Docs
 service-nllb-dialog-servelabel=nllb-serve Docs
+
+service-wordstalk=WordsTalk Academic Translation
+
+service-customgpt4=Custom GPT 4
+
+service-customgpt5=Custom GPT 5
+
+service-customgpt6=Custom GPT 6
+
+service-customgpt7=Custom GPT 7
+
+service-customgpt8=Custom GPT 8
+
+service-customgpt9=Custom GPT 9
+
+service-customgpt10=Custom GPT 10
+
+service-customgpt11=Custom GPT 11
+
+service-customgpt12=Custom GPT 12
+
+service-customgpt13=Custom GPT 13
+
+service-customgpt14=Custom GPT 14
+
+service-customgpt15=Custom GPT 15
+
+service-customgpt16=Custom GPT 16
+
+service-customgpt17=Custom GPT 17
+
+service-customgpt18=Custom GPT 18
+
+service-customgpt19=Custom GPT 19
+
+service-customgpt20=Custom GPT 20
+
+service-customgpt-generic=Custom GPT { $index }
+
+service-deeplcustom-dialog-glossary=Glossario
+
+service-gemini-dialog-maxOutputTokens=Token di output massimi
+
+itemmenu-translateTitle-label=Traduci Titolo
+
+itemmenu-translateAbstract-label=Traduci Abstract
+
+itemmenu-more-label=Altre opzioni di traduzione...
+
+itemmenu-retranslateTitle-label=Ritraduci Titolo
+
+itemmenu-retranslateAbstract-label=Ritraduci Abstract
+
 service-fetchModels-title = Recupera modelli
+
 service-fetchModels-fetching = Recupero dei modelli…
+
 service-fetchModels-unsupported = Il servizio corrente non supporta il recupero dei modelli.
+
 service-fetchModels-failed = Impossibile recuperare i modelli. Controlla endpoint e chiave.
+
 service-fetchModels-done = Recuperati { $count } modelli.

@@ -46,7 +46,12 @@ function isEditableTarget(target: EventTarget | null) {
 }
 
 function isElementLike(value: unknown): value is HTMLElement {
-  return !!value && typeof value === "object" && "nodeType" in value && (value as Node).nodeType === Node.ELEMENT_NODE;
+  return (
+    !!value &&
+    typeof value === "object" &&
+    "nodeType" in value &&
+    (value as Node).nodeType === Node.ELEMENT_NODE
+  );
 }
 
 function getParentElement(elem: Element | null): Element | null {
@@ -79,7 +84,9 @@ function canElementConsumeWheel(elem: HTMLElement, deltaY: number) {
 }
 
 function canPanelConsumeWheel(target: HTMLElement | null, deltaY: number) {
-  const panel = target?.closest("translator-plugin-panel") as HTMLElement | null;
+  const panel = target?.closest(
+    "translator-plugin-panel",
+  ) as HTMLElement | null;
   if (!panel) {
     return false;
   }
@@ -101,7 +108,12 @@ function onPreventVerticalWheel(ev: Event) {
   if (Math.abs(wheelEvent.deltaY) <= 0) {
     return;
   }
-  if (canPanelConsumeWheel(wheelEvent.target as HTMLElement | null, wheelEvent.deltaY)) {
+  if (
+    canPanelConsumeWheel(
+      wheelEvent.target as HTMLElement | null,
+      wheelEvent.deltaY,
+    )
+  ) {
     return;
   }
   wheelEvent.preventDefault();
@@ -110,7 +122,10 @@ function onPreventVerticalWheel(ev: Event) {
 
 function onPreventVerticalKeydown(ev: Event) {
   const keyEvent = ev as KeyboardEvent;
-  if (!verticalScrollKeys.has(keyEvent.key) || isEditableTarget(keyEvent.target)) {
+  if (
+    !verticalScrollKeys.has(keyEvent.key) ||
+    isEditableTarget(keyEvent.target)
+  ) {
     return;
   }
   keyEvent.preventDefault();
@@ -122,8 +137,13 @@ function onPreventTouchMove(ev: Event) {
   ev.stopPropagation();
 }
 
-function toggleDetailsScrollbarVisibility(details: HTMLElement, hidden: boolean) {
-  const viewItem = details.querySelector(".zotero-view-item") as HTMLElement | null;
+function toggleDetailsScrollbarVisibility(
+  details: HTMLElement,
+  hidden: boolean,
+) {
+  const viewItem = details.querySelector(
+    ".zotero-view-item",
+  ) as HTMLElement | null;
   if (hidden) {
     if (!detailsScrollbarStyleState.has(details)) {
       detailsScrollbarStyleState.set(details, {
@@ -204,7 +224,9 @@ function isAllowedHeaderTarget(target: HTMLElement | null) {
 }
 
 function keepSectionExpanded(body: HTMLElement) {
-  const section = body.closest("item-pane-custom-section") as HTMLElement | null;
+  const section = body.closest(
+    "item-pane-custom-section",
+  ) as HTMLElement | null;
   const head = section?.querySelector(".head") as HTMLElement | null;
   if (!section || !head) {
     return;
@@ -245,7 +267,9 @@ function keepSectionExpanded(body: HTMLElement) {
 }
 
 function ensureHeaderPinIndicator(body: HTMLElement) {
-  const section = body.closest("item-pane-custom-section") as HTMLElement | null;
+  const section = body.closest(
+    "item-pane-custom-section",
+  ) as HTMLElement | null;
   const head = section?.querySelector(".head") as HTMLElement | null;
   if (!head) {
     return null;
@@ -264,7 +288,9 @@ function ensureHeaderPinIndicator(body: HTMLElement) {
       applyPinnedState(body, pinnedBody !== body);
     });
   }
-  let indicator = head.querySelector(".translate-pin-indicator") as HTMLElement | null;
+  let indicator = head.querySelector(
+    ".translate-pin-indicator",
+  ) as HTMLElement | null;
   if (!indicator) {
     indicator = head.ownerDocument.createElementNS(
       "http://www.w3.org/1999/xhtml",
@@ -275,8 +301,7 @@ function ensureHeaderPinIndicator(body: HTMLElement) {
     indicator.style.height = "16px";
     indicator.style.minWidth = "16px";
     indicator.style.marginInlineEnd = "6px";
-    indicator.style.background =
-      `center / contain no-repeat url(chrome://${config.addonRef}/content/icons/lock-12.svg)`;
+    indicator.style.background = `center / contain no-repeat url(chrome://${config.addonRef}/content/icons/lock-12.svg)`;
     indicator.style.cursor = "pointer";
 
     const firstAction = head.querySelector(
@@ -302,7 +327,9 @@ function ensureHeaderPinIndicator(body: HTMLElement) {
 
 function applyPinnedState(body: HTMLElement, pinned: boolean) {
   keepSectionExpanded(body);
-  const section = body.closest("item-pane-custom-section") as HTMLElement | null;
+  const section = body.closest(
+    "item-pane-custom-section",
+  ) as HTMLElement | null;
   const details = body.closest("item-details") as HTMLElement | null;
   const pinIndicator = ensureHeaderPinIndicator(body);
   if (pinIndicator) {
@@ -417,7 +444,7 @@ export function registerReaderTabPanel() {
     sidenav: {
       l10nID: getLocaleID("itemPaneSection-sidenav"),
       icon: `chrome://${config.addonRef}/content/icons/section-20.svg`,
-      // @ts-ignore
+      // @ts-ignore - `orderable` is not in the section typings
       orderable: false,
     },
     bodyXHTML: "<translator-plugin-panel />",
@@ -718,7 +745,7 @@ function updateExtraPanel(container: HTMLElement | Document) {
     "translator-plugin-panel",
   ) as TranslatorPanel;
   if (panel) {
-    panel.item = Zotero.Items.get(lastTask?.itemId || -1);
+    panel.item = Zotero.Items.get(lastTask?.itemId || -1) || null;
     panel.render();
   }
 

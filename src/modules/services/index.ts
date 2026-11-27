@@ -15,6 +15,8 @@ import {
   getCustomGPTCount,
   getCustomGPTIndexOf,
   getCustomGPTDisplayName,
+  normalizeLLMEndpoint,
+  sanitizeTaskForLog,
 } from "../../utils";
 
 import { Aliyun } from "./aliyun";
@@ -54,6 +56,10 @@ import { YoudaoZhiyun } from "./youdaozhiyun";
 import { YoudaoZhiyunLLM } from "./youdaozhiyunllm";
 import { DeepLCustom } from "./deeplcustom";
 import { DeepLX } from "./deeplx";
+import { GramotaDict } from "./gramotadict";
+import { Iciba } from "./iciba";
+import { MyMemory } from "./mymemory";
+import { WordsTalk } from "./wordstalk";
 
 const register: TranslateService[] = [
   Aliyun,
@@ -74,6 +80,7 @@ const register: TranslateService[] = [
   Gemini,
   Google,
   GoogleAPI,
+  GramotaDict,
   ChatGPT,
   ...customGPTServices,
   azureGPT,
@@ -81,9 +88,11 @@ const register: TranslateService[] = [
   HaiciDict,
   Huoshan,
   HuoshanWeb,
+  Iciba,
   LibreTranslate,
   Microsoft,
   Mtranserver,
+  MyMemory,
   Niutrans,
   Nllb,
   Openl,
@@ -92,6 +101,7 @@ const register: TranslateService[] = [
   Tencent,
   TencentTransmart,
   WeblioDict,
+  WordsTalk,
   XFfrans,
   Youdao,
   YoudaoDict,
@@ -409,16 +419,32 @@ export class TranslationServices {
       return undefined;
     }
 
-    const endpointPref =
+    const prefPrefix =
       id === "qwenmt"
-        ? "qwenmt.endPoint"
+        ? "qwenmt"
         : id === "chatgpt"
-          ? "chatGPT.endPoint"
-          : `${id.replace("gpt", "GPT")}.endPoint`;
-    const endpoint = getOpenAIModelsEndpoint(
-      String(getPref(endpointPref) || ""),
+          ? "chatGPT"
+          : id.replace("gpt", "GPT");
+    const apiFormat = id.startsWith("customgpt")
+      ? String(getPref(`${prefPrefix}.apiFormat`) || "openai")
+      : "openai";
+    const normalizedEndpoint = normalizeLLMEndpoint(
+      String(getPref(`${prefPrefix}.endPoint`) || ""),
+      apiFormat,
     );
-    return endpoint ? { url: endpoint, headers: authHeaders } : undefined;
+    const endpoint = getOpenAIModelsEndpoint(normalizedEndpoint);
+    if (!endpoint) {
+      return undefined;
+    }
+    const headers =
+      apiFormat === "anthropic"
+        ? {
+            Accept: "application/json",
+            "anthropic-version": "2023-06-01",
+            "x-api-key": secret,
+          }
+        : authHeaders;
+    return { url: endpoint, headers };
   }
 
   public async fetchServiceModels(id: string): Promise<string[]> {
@@ -606,7 +632,8 @@ export class TranslationServices {
     // Check whether item language is in disabled languages list
     let disabledByItemLanguage = false;
     if (!noCheckZoteroItemLanguage && task.itemId) {
-      const item = Zotero.Items.getTopLevel([Zotero.Items.get(task.itemId)])[0];
+      const taskItem = Zotero.Items.get(task.itemId);
+      const item = taskItem && Zotero.Items.getTopLevel([taskItem])[0];
       if (item && task.type !== "custom") {
         const itemLanguage = getPref("enableAutoDetectLanguage")
           ? task.langfrom
@@ -649,6 +676,8 @@ export class TranslationServices {
       const cachedTask = addon.data.translate.queue.findLast((_t) => {
         return (
           _t.status === "success" &&
+          typeof _t.result === "string" &&
+          _t.result.trim().length > 0 &&
           _t.raw === task!.raw &&
           _t.service === task!.service &&
           (!task.langfrom || _t.langfrom === task.langfrom) &&
@@ -658,7 +687,8 @@ export class TranslationServices {
 
       if (cachedTask) {
         cacheHit = true;
-        ztoolkit.log("cache hit", cachedTask);
+        ztoolkit.log("cache hit", sanitizeTaskForLog(cachedTask));
+        task.audio = cachedTask.audio;
         task.result = cachedTask.result;
         task.status = "success";
 
@@ -715,6 +745,16 @@ export class TranslationServices {
         task.result = stripEmptyLines(task.result, true);
       }
 
+      // Treat an empty translation as a failure so configured candidate services can be tried.
+      if (task.status === "success" && !task.result?.trim()) {
+        ztoolkit.log("Empty translation result; treating as failure", {
+          service: task.service,
+          raw: task.raw,
+        });
+        task.result = "";
+        task.status = "fail";
+      }
+
       // Run extra tasks. Do not wait.
       if (task.extraTasks?.length) {
         Promise.all(
@@ -755,15 +795,24 @@ export class TranslationServices {
               const savePosition = getPref("annotationTranslationPosition") as
                 | "comment"
                 | "body";
+              const savePositionInBody = getPref(
+                "annotationTranslationPositionInBody",
+              ) as "before" | "after";
               const currentText = (
                 (savePosition === "comment"
                   ? item.annotationComment
                   : item.annotationText) || ""
               ).replace(regex, "");
+              const translationText = `${splitChar}${task.result}${splitChar}\n`;
               let text = `${
                 currentText[currentText.length - 1] === "\n" ? "" : "\n"
-              }${splitChar}${task.result}${splitChar}\n`;
-              text = splitChar === "" ? text : `${currentText}${text}`;
+              }${translationText}`;
+              if (splitChar !== "") {
+                text =
+                  savePosition === "body" && savePositionInBody === "before"
+                    ? `${translationText}${currentText}`
+                    : `${currentText}${text}`;
+              }
               item[
                 savePosition === "comment"
                   ? "annotationComment"

@@ -1,6 +1,10 @@
 import {
+  buildThinkingParams,
   getPref,
   getString,
+  getThinkingLevelOptions,
+  normalizeLLMEndpoint,
+  stripThinkingTags,
   transformPromptWithContext,
   isTaskSnapshotStillActive,
   registerActiveRequest,
@@ -9,6 +13,7 @@ import {
   CUSTOM_GPT_MAX_COUNT,
 } from "../../utils";
 import { TranslateService } from "./base";
+import { modelSupportsTemperature } from "./claude";
 
 type CustomGPTID = `customgpt${number}`;
 type ID = "chatgpt" | CustomGPTID | "azuregpt";
@@ -33,12 +38,15 @@ const DEFAULT_CUSTOM_GPT_PROMPT =
  */
 function ensureCustomGPTDefaults(prefPrefix: string) {
   const defaults: Record<string, string | boolean> = {
+    apiFormat: "openai",
     endPoint: "",
     model: "",
     temperature: "1.0",
     prompt: DEFAULT_CUSTOM_GPT_PROMPT,
     stream: true,
+    thinkingLevel: "default",
     customParams: "",
+    customHeaders: "",
   };
   for (const [key, value] of Object.entries(defaults)) {
     if (getPref(`${prefPrefix}.${key}`) === undefined) {
@@ -47,7 +55,10 @@ function ensureCustomGPTDefaults(prefPrefix: string) {
   }
 }
 
-function getCustomParams(prefix: string): Record<string, any> {
+function getCustomParams(
+  prefix: string,
+  extraFilterKeys: string[] = [],
+): Record<string, any> {
   const storedCustomParams =
     (getPref(`${prefix}.customParams`) as string) || "{}";
   try {
@@ -67,6 +78,7 @@ function getCustomParams(prefix: string): Record<string, any> {
       "tts_voice_info",
       "sessionContext",
       "session_context",
+      ...extraFilterKeys,
     ];
     return Object.fromEntries(
       Object.entries(customParams).filter(
@@ -78,12 +90,38 @@ function getCustomParams(prefix: string): Record<string, any> {
   }
 }
 
+// Headers set by the plugin itself; custom headers with these names are ignored.
+const STANDARD_REQUEST_HEADERS = [
+  "content-type",
+  "authorization",
+  "api-key",
+  "x-api-key",
+  "anthropic-version",
+];
+
+function getCustomHeaders(prefix: string): Record<string, string> {
+  const storedCustomHeaders =
+    (getPref(`${prefix}.customHeaders`) as string) || "{}";
+  try {
+    const customHeaders = JSON.parse(storedCustomHeaders);
+    return Object.fromEntries(
+      Object.entries(customHeaders)
+        .filter(
+          ([key]) => !STANDARD_REQUEST_HEADERS.includes(key.toLowerCase()),
+        )
+        .map(([key, value]) => [key, String(value)]),
+    );
+  } catch (e) {
+    return {};
+  }
+}
+
 function normalizeLineEndings(text: string): string {
   return text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 }
 
 function trimTrailingLineBreaks(text: string): string {
-  return normalizeLineEndings(text).replace(/\n+$/g, "");
+  return normalizeLineEndings(stripThinkingTags(text)).replace(/\n+$/g, "");
 }
 
 function parseJsonPayload(payloadText: string): any | undefined {
@@ -335,6 +373,28 @@ function parseStreamResponse(obj: any): ParsedResponse {
     };
   }
 
+  // Handle Anthropic format (stream events carry a type field)
+  if (typeof obj.type === "string" && !obj.choices && !obj.candidates) {
+    if (obj.type === "content_block_delta") {
+      return {
+        content: obj.delta?.text || "",
+        finished: false,
+        finishReason: null,
+      };
+    }
+    if (obj.type === "message_stop") {
+      return { content: "", finished: true, finishReason: "stop" };
+    }
+    if (obj.type === "message_delta" && obj.delta?.stop_reason) {
+      return {
+        content: "",
+        finished: true,
+        finishReason: obj.delta.stop_reason,
+      };
+    }
+    return { content: "", finished: false, finishReason: null };
+  }
+
   // Handle OpenAI format (choices array with delta)
   if (obj.choices && obj.choices[0]) {
     const choice = obj.choices[0];
@@ -368,7 +428,7 @@ function parseStreamResponse(obj: any): ParsedResponse {
         ? candidate.content.parts
         : [];
       for (const part of parts) {
-        if (typeof part?.text === "string") {
+        if (!part?.thought && typeof part?.text === "string") {
           content += part.text;
         }
       }
@@ -395,6 +455,13 @@ function parseStreamResponse(obj: any): ParsedResponse {
 }
 
 function parseNonStreamResponse(obj: any): string {
+  // Handle Anthropic format (content blocks; thinking blocks are skipped)
+  if (Array.isArray(obj.content)) {
+    const textBlock = obj.content.find(
+      (block: { type?: string; text?: string }) => block.type === "text",
+    );
+    return textBlock?.text || "";
+  }
   // Handle OpenAI format (choices array)
   if (obj.choices && obj.choices[0]) {
     return (
@@ -507,6 +574,8 @@ const gptTranslate = async function (
   prefix: string,
   data: Parameters<TranslateService["translate"]>[0],
   stream?: boolean,
+  apiFormat?: string,
+  thinkingLevel?: string,
 ) {
   function transformContent(
     langFrom: string,
@@ -523,7 +592,8 @@ const gptTranslate = async function (
   }
 
   const streamMode = stream !== false;
-  const useResponsesApi = isResponsesApiEndpoint(apiURL);
+  const useAnthropicApi = apiFormat === "anthropic";
+  const useResponsesApi = !useAnthropicApi && isResponsesApiEndpoint(apiURL);
   const rawSnapshot = data.raw;
   const receiveToken = getActiveReceiveToken();
   const canCommit = () =>
@@ -559,7 +629,7 @@ const gptTranslate = async function (
     let refreshFrame: number | null = null;
     let eventFlushFrame: number | null = null;
 
-    const view = typeof window !== "undefined" ? window : undefined;
+    const view = Zotero.getMainWindow?.();
     const scheduleFrame = (callback: () => void): number => {
       const raf = view?.requestAnimationFrame?.bind(view);
       if (raf) {
@@ -934,7 +1004,10 @@ const gptTranslate = async function (
   };
 
   const buildRequestBody = (sourceText: string) => {
-    const customParams = getCustomParams(prefix);
+    const thinkingParams = useAnthropicApi
+      ? {}
+      : buildThinkingParams(apiURL, model, thinkingLevel ?? "default");
+    const customParams = getCustomParams(prefix, Object.keys(thinkingParams));
     const hasCustomTokenLimit = TOKEN_LIMIT_PARAM_KEYS.some(
       (key) => customParams[key] !== undefined,
     );
@@ -944,12 +1017,31 @@ const gptTranslate = async function (
         ? { max_output_tokens: DEFAULT_MAX_OUTPUT_TOKENS }
         : { max_tokens: DEFAULT_MAX_OUTPUT_TOKENS };
 
+    if (useAnthropicApi) {
+      return {
+        model: model,
+        messages: [
+          {
+            role: "user",
+            content: transformContent(data.langfrom, data.langto, sourceText),
+          },
+        ],
+        ...(modelSupportsTemperature(model) && !Number.isNaN(temperature)
+          ? { temperature }
+          : {}),
+        stream: streamMode,
+        ...tokenLimitParams,
+        ...customParams,
+      };
+    }
+
     return useResponsesApi
       ? {
           model: model,
           input: transformContent(data.langfrom, data.langto, sourceText),
           temperature: temperature,
           stream: streamMode,
+          ...thinkingParams,
           ...tokenLimitParams,
           ...customParams,
         }
@@ -963,6 +1055,7 @@ const gptTranslate = async function (
           ],
           temperature: temperature,
           stream: streamMode,
+          ...thinkingParams,
           ...tokenLimitParams,
           ...customParams,
         };
@@ -970,13 +1063,23 @@ const gptTranslate = async function (
 
   const requestOnce = async (sourceText: string, committedPrefix = "") => {
     let finalSegment = "";
+    const requestHeaders = {
+      Accept: streamMode ? "text/event-stream" : "application/json",
+      ...(useAnthropicApi
+        ? {
+            "Content-Type": "application/json",
+            "anthropic-version": "2023-06-01",
+            "x-api-key": data.secret,
+          }
+        : {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${data.secret}`,
+            "api-key": data.secret,
+          }),
+      ...getCustomHeaders(prefix),
+    };
     const xhr = await Zotero.HTTP.request("POST", apiURL, {
-      headers: {
-        Accept: streamMode ? "text/event-stream" : "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${data.secret}`,
-        "api-key": data.secret,
-      },
+      headers: requestHeaders,
       body: JSON.stringify(buildRequestBody(sourceText)),
       responseType: "text",
       requestObserver: (xmlhttp: XMLHttpRequest) => {
@@ -1080,6 +1183,7 @@ function createGPTService(id: ID): TranslateService {
             getPref("azureGPT.temperature") as string,
           );
           const stream = getPref("azureGPT.stream") !== false;
+          const thinkingLevel = getPref("azureGPT.thinkingLevel") as string;
 
           const apiURL = new URL(endPoint);
           apiURL.pathname = `/openai/deployments/${model}/chat/completions`;
@@ -1092,16 +1196,23 @@ function createGPTService(id: ID): TranslateService {
             "azureGPT",
             data,
             stream,
+            undefined,
+            thinkingLevel,
           );
         }
 
         case "chatgpt": {
-          const apiURL = getPref(`${prefPrefix}.endPoint`) as string;
+          const apiURL = normalizeLLMEndpoint(
+            getPref(`${prefPrefix}.endPoint`) as string,
+          );
           const model = getPref(`${prefPrefix}.model`) as string;
           const temperature = parseFloat(
             getPref(`${prefPrefix}.temperature`) as string,
           );
           const stream = getPref(`${prefPrefix}.stream`) !== false;
+          const thinkingLevel = getPref(
+            `${prefPrefix}.thinkingLevel`,
+          ) as string;
 
           return await gptTranslate(
             apiURL,
@@ -1110,6 +1221,8 @@ function createGPTService(id: ID): TranslateService {
             prefPrefix,
             data,
             stream,
+            undefined,
+            thinkingLevel,
           );
         }
 
@@ -1118,12 +1231,20 @@ function createGPTService(id: ID): TranslateService {
           // exist for services beyond the predefined customGPT1..20.
           if (id.startsWith("customgpt")) {
             ensureCustomGPTDefaults(prefPrefix);
-            const apiURL = getPref(`${prefPrefix}.endPoint`) as string;
+            const apiFormat =
+              (getPref(`${prefPrefix}.apiFormat`) as string) || "openai";
+            const apiURL = normalizeLLMEndpoint(
+              getPref(`${prefPrefix}.endPoint`) as string,
+              apiFormat,
+            );
             const model = getPref(`${prefPrefix}.model`) as string;
             const temperature = parseFloat(
               getPref(`${prefPrefix}.temperature`) as string,
             );
             const stream = getPref(`${prefPrefix}.stream`) !== false;
+            const thinkingLevel = getPref(
+              `${prefPrefix}.thinkingLevel`,
+            ) as string;
 
             return await gptTranslate(
               apiURL,
@@ -1132,6 +1253,8 @@ function createGPTService(id: ID): TranslateService {
               prefPrefix,
               data,
               stream,
+              apiFormat,
+              thinkingLevel,
             );
           }
           break;
@@ -1176,15 +1299,79 @@ function createGPTService(id: ID): TranslateService {
         });
       }
 
+      if (id.startsWith("customgpt")) {
+        settings
+          .addSelectSetting({
+            prefKey: `${prefPrefix as `customGPT${number}`}.apiFormat`,
+            nameKey: "service-chatgpt-dialog-apiFormat",
+            options: [
+              {
+                value: "openai",
+                label: getString("service-dialog-api-format-openai"),
+              },
+              {
+                value: "anthropic",
+                label: getString("service-dialog-api-format-anthropic"),
+              },
+            ],
+          })
+          .addStaticRow("", {
+            tag: "div",
+            namespace: "html",
+            styles: {
+              color: "var(--fill-secondary)",
+              fontSize: "0.9em",
+              maxWidth: "400px",
+            },
+            properties: {
+              textContent: getString("service-gpt-dialog-apiFormat-hint"),
+            },
+          });
+      }
+
       settings
         .addTextAreaSetting({
           prefKey: `${prefPrefix}.prompt`,
           nameKey: `service-${servicePrefix}-dialog-prompt`,
           placeholder: getString(`service-${servicePrefix}-dialog-prompt`),
         })
+        .addStaticRow("", {
+          tag: "div",
+          namespace: "html",
+          styles: {
+            color: "var(--fill-secondary)",
+            fontSize: "0.9em",
+            maxWidth: "400px",
+          },
+          properties: {
+            textContent: getString("service-gpt-dialog-prompt-hint", {
+              args: {
+                variables: "${langFrom}, ${langTo}, ${sourceText}",
+                required: "${sourceText}",
+              },
+            }),
+          },
+        })
         .addCheckboxSetting({
           prefKey: `${prefPrefix}.stream`,
           nameKey: `service-${servicePrefix}-dialog-stream`,
+        })
+        .addSelectSetting({
+          prefKey: `${prefPrefix}.thinkingLevel`,
+          nameKey: `service-${servicePrefix}-dialog-thinkingLevel`,
+          options: getThinkingLevelOptions(),
+        })
+        .addStaticRow("", {
+          tag: "div",
+          namespace: "html",
+          styles: {
+            color: "var(--fill-secondary)",
+            fontSize: "0.9em",
+            maxWidth: "400px",
+          },
+          properties: {
+            textContent: getString("service-gpt-dialog-thinkingLevel-hint"),
+          },
         })
         .addCustomParamsSetting({
           prefKey: `${prefPrefix}.customParams`,
@@ -1192,6 +1379,10 @@ function createGPTService(id: ID): TranslateService {
           desc: getString(
             `service-${servicePrefix}-dialog-custom-request-description`,
           ),
+        })
+        .addCustomHeadersSetting({
+          prefKey: `${prefPrefix}.customHeaders`,
+          nameKey: `service-${servicePrefix}-dialog-custom-headers`,
         });
     },
   };

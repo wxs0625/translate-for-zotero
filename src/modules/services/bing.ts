@@ -224,6 +224,45 @@ async function requestBingTranslate(
   return xhr.response;
 }
 
+async function tryEdgeDirectTranslate(
+  fromLang: string,
+  toLang: string,
+  text: string,
+): Promise<string | null> {
+  try {
+    const xhr = await Zotero.HTTP.request(
+      "POST",
+      `https://edge.microsoft.com/translate/translatetext?from=${encodeURIComponent(fromLang)}&to=${encodeURIComponent(toLang)}&isEnterpriseClient=false`,
+      {
+        headers: {
+          "content-type": "application/json",
+          "User-Agent": BING_USER_AGENT,
+        },
+        body: JSON.stringify([text]),
+        responseType: "json",
+        requestObserver: (xmlhttp: XMLHttpRequest) => {
+          registerActiveRequest(xmlhttp);
+        },
+      },
+    );
+    const translated = xhr?.response?.[0]?.translations?.[0]?.text;
+    if (
+      xhr?.status === 200 &&
+      typeof translated === "string" &&
+      translated.trim()
+    ) {
+      return translated
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .replace(/\n{2,}/g, "\n")
+        .trim();
+    }
+  } catch {
+    // Fall back to Bing web session translator
+  }
+  return null;
+}
+
 const translate: TranslateService["translate"] = async (data) => {
   const rawSnapshot = data.raw;
   const receiveToken = getActiveReceiveToken();
@@ -235,6 +274,18 @@ const translate: TranslateService["translate"] = async (data) => {
   const chunks = splitTextForBing(data.raw);
   if (!chunks.length) {
     data.result = "";
+    return;
+  }
+
+  const directResult = await tryEdgeDirectTranslate(
+    data.langfrom || "",
+    data.langto || "",
+    data.raw,
+  );
+  if (directResult !== null) {
+    if (canCommit()) {
+      data.result = directResult;
+    }
     return;
   }
 

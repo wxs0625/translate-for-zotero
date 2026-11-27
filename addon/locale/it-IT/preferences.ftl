@@ -12,6 +12,10 @@ pref-basic-annotationTranslationInComment =
     .label = Salva traduzione nel commento dell'annotazione
 pref-basic-annotationTranslationInBody =
     .label = Salva traduzione nel corpo dell'annotazione
+pref-basic-annotationTranslationInBodyBeforeText =
+    .label = Prima del testo dell'annotazione
+pref-basic-annotationTranslationInBodyAfterText =
+    .label = Dopo il testo dell'annotazione
 pref-basic-enableAnnotationFromSyncTranslation =
     .label = Auto-traduci annotazioni da Sync
 pref-basic-enableNote =
@@ -33,8 +37,6 @@ pref-service-sentenceServices =
     .value = Servizi di traduzione
 pref-service-sentenceServicesSecret =
     .value = Segreto
-pref-service-customGPTCount =
-    .value = Numero di servizi Custom GPT (1-100)
 pref-service-attachPaperContext =
     .label = Fornisci servizi GPT/Claude/Gemini con titolo e abstract
 pref-service-useWordService =
@@ -47,10 +49,6 @@ pref-service-langfrom =
     .value = Traduci da
 pref-service-langto =
     .value = A
-pref-service-model =
-    .value = Modello
-pref-service-fetchModels =
-    .label = Recupera modelli
 pref-service-hint =
     .value = Servizio📍richiede configurazione personalizzata; 🗝️richiede un segreto. Vedi GitHub per maggiori dettagli
 
@@ -69,12 +67,6 @@ pref-interface-fontSize =
     .value = Dimensione font
 pref-interface-lineHeight =
     .value = Altezza delle linee
-pref-interface-minResultHeight =
-    .value = Altezza minima del risultato di traduzione (px)
-pref-interface-outputBackgroundColor =
-    .value = Colore di sfondo del risultato di traduzione
-pref-interface-sourceBackgroundColor =
-    .value = Colore di sfondo del testo sorgente
 pref-interface-showItemMenu =
     .label = Mostra menu contestuale dell'elemento
 pref-interface-showItemMenuTitleTranslation =
@@ -144,3 +136,21 @@ pref-about-version =
 
 pref-advanced-stripEmptyLines =
     .label = Rimuovi le righe vuote e pensieri dai risultati della traduzione
+
+pref-service-customGPTCount =
+    .value = Numero di servizi Custom GPT (1-100)
+
+pref-service-model =
+    .value = Modello
+
+pref-service-fetchModels =
+    .label = Recupera modelli
+
+pref-interface-minResultHeight =
+    .value = Altezza minima del risultato di traduzione (px)
+
+pref-interface-outputBackgroundColor =
+    .value = Colore di sfondo del risultato di traduzione
+
+pref-interface-sourceBackgroundColor =
+    .value = Colore di sfondo del testo sorgente

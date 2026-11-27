@@ -25,7 +25,6 @@ import { registerMenu } from "./modules/menu";
 import { registerExtraColumns } from "./modules/itemTree";
 import { registerShortcuts } from "./modules/shortcuts";
 import { registerItemPaneInfoRows } from "./modules/infoBox";
-import { registerPrompt } from "./modules/prompt";
 import { registerCustomFields } from "./modules/fields";
 import { prewarmMathRendering } from "./utils/mathRenderer";
 
@@ -157,7 +156,6 @@ async function onMainWindowLoad(win: Window): Promise<void> {
   );
 
   registerMenu();
-  registerPrompt();
 
   // Prewarm KaTeX so the first formula rendered during streaming doesn't
   // cause a one-time initialization hitch (~3ms cold start + lazy font load).
@@ -204,6 +202,9 @@ async function onMainWindowUnload(win: Window): Promise<void> {
 function onShutdown(): void {
   clearConcatAutoTranslateTimer();
   ztoolkit.unregisterAll();
+  Zotero.getMainWindows().forEach((win) => {
+    onMainWindowUnload(win);
+  });
   // Remove addon object
   addon.data.alive = false;
   // @ts-ignore - Plugin instance is not typed
@@ -254,7 +255,11 @@ function onNotify(
 }
 
 function onPrefsLoad(event: Event) {
-  registerPrefsScripts((event.target as any).ownerGlobal);
+  // `ownerGlobal` is undefined on Zotero 11+ (Firefox 153); use defaultView
+  registerPrefsScripts(
+    (event.target as Element)?.ownerDocument?.defaultView ||
+      (event.target as any).ownerGlobal,
+  );
 }
 
 function onShortcuts(type: string) {
@@ -262,8 +267,7 @@ function onShortcuts(type: string) {
     case "library":
       {
         addon.hooks.onTranslateInBatch(
-          Zotero.getActiveZoteroPane()
-            .getSelectedItems(true)
+          (Zotero.getActiveZoteroPane()?.getSelectedItems(true) || [])
             .map((id) => addTranslateTitleTask(id, true))
             .filter((task) => task) as TranslateTask[],
           { noDisplay: true, noCache: true },

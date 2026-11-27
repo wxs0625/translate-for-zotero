@@ -146,8 +146,7 @@ function getTemporaryRefreshHandler(options?: { task?: TranslateTask }) {
     if (
       addon.data.translate.refreshTick === newTick &&
       addon.data.translate.activeReceiveToken === receiveToken &&
-      (!translateTask ||
-        addon.data.translate.activeTaskId === translateTask.id)
+      (!translateTask || addon.data.translate.activeTaskId === translateTask.id)
     ) {
       addon.hooks.onReaderPopupRefresh();
       addon.hooks.onReaderTabPanelRefresh();

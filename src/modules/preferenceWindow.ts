@@ -2,7 +2,11 @@ import { config, homepage } from "../../package.json";
 import { LANG_CODE } from "../utils/config";
 import { getString } from "../utils/locale";
 import { getPref, setPref, getCustomGPTCount } from "../utils/prefs";
-import { setServiceSecret, validateServiceSecret } from "../utils/secret";
+import {
+  getServiceSecret,
+  setServiceSecret,
+  validateServiceSecret,
+} from "../utils/secret";
 import { createServiceSettingsDialog } from "../utils";
 import { services } from "./services";
 import { refreshPanelModelMenus, refreshPanelServicesMenus } from "./tabpanel";
@@ -203,6 +207,12 @@ function buildPrefsPane() {
     });
 
   doc
+    .querySelector(`#${makeId("annotationTranslationPosition")}`)
+    ?.addEventListener("command", (e: Event) => {
+      onPrefsEvents("setAnnotationTranslationPosition");
+    });
+
+  doc
     .querySelector(`#${makeId("enablePopup")}`)
     ?.addEventListener("command", (e: Event) => {
       onPrefsEvents("setEnablePopup");
@@ -234,13 +244,13 @@ function buildPrefsPane() {
 
   doc
     .querySelector(`#${makeId("sentenceServicesSecret")}`)
-    ?.addEventListener("input", (e: Event) => {
+    ?.addEventListener("blur", (e: Event) => {
       onPrefsEvents("updateSentenceSecret");
     });
 
   doc
     .querySelector(`#${makeId("wordServicesSecret")}`)
-    ?.addEventListener("input", (e: Event) => {
+    ?.addEventListener("blur", (e: Event) => {
       onPrefsEvents("updateWordSecret");
     });
 
@@ -325,6 +335,7 @@ function buildPrefsPane() {
 
 function updatePrefsPaneDefault() {
   onPrefsEvents("setAutoTranslateAnnotation", false);
+  onPrefsEvents("setAnnotationTranslationPosition", false);
   onPrefsEvents("setEnablePopup", false);
   onPrefsEvents("setShowPlayBtn", false);
   onPrefsEvents("setUseWordService", false);
@@ -397,6 +408,19 @@ function onPrefsEvents(type: string, fromElement: boolean = true) {
     case "setAutoTranslateAnnotation":
       {
         addon.hooks.onReaderTabPanelRefresh();
+      }
+      break;
+    case "setAnnotationTranslationPosition":
+      {
+        const elemValue = fromElement
+          ? (
+              doc.querySelector(
+                `#${makeId("annotationTranslationPosition")}`,
+              ) as XUL.Element
+            ).getAttribute("value")
+          : (getPref("annotationTranslationPosition") as string);
+        const hidden = elemValue !== "body";
+        setDisabled("annotation-translation-position-in-body", hidden);
       }
       break;
     case "setEnablePopup":
@@ -473,14 +497,17 @@ function onPrefsEvents(type: string, fromElement: boolean = true) {
       break;
     case "updateSentenceSecret":
       {
-        setServiceSecret(
-          getPref("translateSource") as string,
-          (
-            doc.querySelector(
-              `#${makeId("sentenceServicesSecret")}`,
-            ) as HTMLInputElement
-          ).value,
-        );
+        const serviceId = getPref("translateSource") as string;
+        const inputElem = doc.querySelector(
+          `#${makeId("sentenceServicesSecret")}`,
+        ) as HTMLInputElement;
+        const trimmedValue = inputElem.value.trim();
+        if (trimmedValue !== inputElem.value) {
+          inputElem.value = trimmedValue;
+        }
+        if (trimmedValue !== getServiceSecret(serviceId)) {
+          setServiceSecret(serviceId, trimmedValue);
+        }
       }
       break;
     case "setSentenceSecret":
@@ -533,14 +560,17 @@ function onPrefsEvents(type: string, fromElement: boolean = true) {
       break;
     case "updateWordSecret":
       {
-        setServiceSecret(
-          getPref("dictSource") as string,
-          (
-            doc.querySelector(
-              `#${makeId("wordServicesSecret")}`,
-            ) as HTMLInputElement
-          ).value,
-        );
+        const serviceId = getPref("dictSource") as string;
+        const inputElem = doc.querySelector(
+          `#${makeId("wordServicesSecret")}`,
+        ) as HTMLInputElement;
+        const trimmedValue = inputElem.value.trim();
+        if (trimmedValue !== inputElem.value) {
+          inputElem.value = trimmedValue;
+        }
+        if (trimmedValue !== getServiceSecret(serviceId)) {
+          setServiceSecret(serviceId, trimmedValue);
+        }
       }
       break;
     case "setWordSecret":

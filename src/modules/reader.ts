@@ -67,59 +67,102 @@ export function registerReaderInitializer() {
     (event) => {
       const { reader, doc, params, append } = event;
       const annotationData = params.annotation;
-      const annotationId = annotationData.id;
 
-      append(
-        ztoolkit.UI.createElement(doc, "div", {
-          id: `${config.addonRef}-annotation-translate-${annotationId}`,
-          classList: ["icon"],
-          attributes: {
-            "data-annotation-id": annotationId,
-          },
-          properties: {
-            innerHTML: SVGIcon,
-            title: getString("sideBarIcon-title"),
-          },
-          listeners: [
-            {
-              type: "click",
-              listener: (e) => {
-                const target = e.currentTarget as HTMLElement;
-                const task = addTranslateAnnotationTask(
-                  reader._item.libraryID,
-                  target.dataset.annotationId || annotationId,
-                );
-                addon.hooks.onTranslate(task, {
-                  noCheckZoteroItemLanguage: true,
-                  noDisplay: true,
-                  forceRestart: true,
-                });
-                e.preventDefault();
-              },
-            },
-            {
-              type: "mouseover",
-              listener: (e) => {
-                (e.target as HTMLElement).style.backgroundColor =
-                  "var(--color-sidepane)";
-              },
-            },
-            {
-              type: "mouseout",
-              listener: (e) => {
-                (e.target as HTMLElement).style.removeProperty(
-                  "background-color",
-                );
-              },
-            },
-          ],
-          enableElementRecord: false,
-          ignoreIfExists: true,
-        }),
-      );
+      // If annotations are less than 1000, create the button immediately
+      if ((reader._item?.numAnnotations?.() ?? 0) < 1000) {
+        append(createTranslateAnnotationButton(doc, reader, annotationData));
+        return;
+      }
+
+      // Delay button creation when there are 1000+ annotations to avoid blocking main thread
+      const placeholder = doc.createElement("img");
+      placeholder.src = "chrome://zotero/error.png";
+      placeholder.dataset.annotationId = annotationData.id;
+      placeholder.dataset.libraryId = reader._item.libraryID.toString();
+      placeholder.addEventListener("error", (ev) => {
+        const target = ev.currentTarget as HTMLElement;
+        target.ownerDocument.defaultView?.requestIdleCallback(() => {
+          const annotationID = target.dataset.annotationId;
+          const libraryID = parseInt(target.dataset.libraryId || "");
+          const button = doc.createElement("div");
+          button.classList.add("icon");
+          button.innerHTML = SVGIcon;
+          button.title = getString("sideBarIcon-title");
+          button.addEventListener("click", (e) => {
+            const task = addTranslateAnnotationTask(libraryID, annotationID!);
+            addon.hooks.onTranslate(task, {
+              noCheckZoteroItemLanguage: true,
+              noDisplay: true,
+              forceRestart: true,
+            });
+            e.preventDefault();
+          });
+          button.addEventListener("mouseover", (e) => {
+            (e.target as HTMLElement).style.backgroundColor =
+              "var(--color-sidepane)";
+          });
+          button.addEventListener("mouseout", (e) => {
+            (e.target as HTMLElement).style.removeProperty("background-color");
+          });
+          target.replaceWith(button);
+        });
+      });
+      append(placeholder);
     },
     config.addonID,
   );
+}
+
+function createTranslateAnnotationButton(
+  doc: Document,
+  reader: _ZoteroTypes.ReaderInstance,
+  annotationData: any,
+): HTMLElement {
+  const annotationId = annotationData.id;
+  return ztoolkit.UI.createElement(doc, "div", {
+    id: `${config.addonRef}-annotation-translate-${annotationId}`,
+    classList: ["icon"],
+    attributes: {
+      "data-annotation-id": annotationId,
+    },
+    properties: {
+      innerHTML: SVGIcon,
+      title: getString("sideBarIcon-title"),
+    },
+    listeners: [
+      {
+        type: "click",
+        listener: (e) => {
+          const target = e.currentTarget as HTMLElement;
+          const task = addTranslateAnnotationTask(
+            reader._item.libraryID,
+            target.dataset.annotationId || annotationId,
+          );
+          addon.hooks.onTranslate(task, {
+            noCheckZoteroItemLanguage: true,
+            noDisplay: true,
+            forceRestart: true,
+          });
+          e.preventDefault();
+        },
+      },
+      {
+        type: "mouseover",
+        listener: (e) => {
+          (e.target as HTMLElement).style.backgroundColor =
+            "var(--color-sidepane)";
+        },
+      },
+      {
+        type: "mouseout",
+        listener: (e) => {
+          (e.target as HTMLElement).style.removeProperty("background-color");
+        },
+      },
+    ],
+    enableElementRecord: false,
+    ignoreIfExists: true,
+  });
 }
 
 function getSelectionTextWithParagraphs(

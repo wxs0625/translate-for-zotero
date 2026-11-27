@@ -1,4 +1,4 @@
-﻿pref-general = 通用
+pref-general = 通用
 
 pref-basic-enableAuto =
     .label = 自动翻译选择内容
@@ -12,6 +12,10 @@ pref-basic-annotationTranslationInComment =
     .label = 保存翻译至注释评论
 pref-basic-annotationTranslationInBody =
     .label = 保存翻译至注释正文
+pref-basic-annotationTranslationInBodyBeforeText =
+    .label = 翻译置于注释正文前
+pref-basic-annotationTranslationInBodyAfterText =
+    .label = 翻译置于注释正文后
 pref-basic-enableAnnotationFromSyncTranslation =
     .label = 自动翻译来自同步的注释
 pref-basic-enableNote =
@@ -33,8 +37,6 @@ pref-service-sentenceServices =
     .value = 翻译服务
 pref-service-sentenceServicesSecret =
     .value = 密钥
-pref-service-customGPTCount =
-    .value = 自定义GPT服务数量（1-100）
 pref-service-attachPaperContext =
     .label = 向GPT/Claude/Gemini服务提供论文标题和摘要
 pref-service-useWordService =
@@ -47,10 +49,6 @@ pref-service-langfrom =
     .value = 从
 pref-service-langto =
     .value = 翻译到
-pref-service-model =
-    .value = 模型
-pref-service-fetchModels =
-    .label = 获取模型
 pref-service-hint =
     .value = 服务📍需要自定义配置；🗝️需要密钥。详情请参阅GitHub
 
@@ -69,12 +67,6 @@ pref-interface-fontSize =
     .value = 字体大小
 pref-interface-lineHeight =
     .value = 行高
-pref-interface-minResultHeight =
-    .value = 翻译结果最低高度（px）
-pref-interface-outputBackgroundColor =
-    .value = 翻译结果背景颜色
-pref-interface-sourceBackgroundColor =
-    .value = 源文本框背景颜色
 pref-interface-showItemMenu =
     .label = 显示条目上下文菜单
 pref-interface-showItemMenuTitleTranslation =
@@ -145,3 +137,20 @@ pref-about-version =
 pref-advanced-stripEmptyLines =
     .label = 从翻译结果中删除空行和思考内容
 
+pref-service-customGPTCount =
+    .value = 自定义GPT服务数量（1-100）
+
+pref-service-model =
+    .value = 模型
+
+pref-service-fetchModels =
+    .label = 获取模型
+
+pref-interface-minResultHeight =
+    .value = 翻译结果最低高度（px）
+
+pref-interface-outputBackgroundColor =
+    .value = 翻译结果背景颜色
+
+pref-interface-sourceBackgroundColor =
+    .value = 源文本框背景颜色

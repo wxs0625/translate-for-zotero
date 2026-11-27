@@ -78,7 +78,10 @@ const translate = <TranslateService["translate"]>async function (data) {
   const glossaryEntries = parseGlossaryEntries(
     ((getPref("deeplcustom.glossary") as string) || "").trim(),
   );
-  const glossaryInjectedText = applyGlossaryToSourceText(data.raw, glossaryEntries);
+  const glossaryInjectedText = applyGlossaryToSourceText(
+    data.raw,
+    glossaryEntries,
+  );
 
   const url = getPref("deeplcustom.endpoint") as string;
   const reqBody = JSON.stringify({
