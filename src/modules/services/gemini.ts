@@ -397,17 +397,11 @@ const translate = <TranslateService["translate"]>async function (data) {
       let lastEmittedResult = "";
       let latestResponse = "";
       let parseFrame: number | null = null;
-      const view = Zotero.getMainWindow?.();
       const cancelParseFrame = () => {
         if (parseFrame === null) {
           return;
         }
-        if (typeof view?.cancelAnimationFrame === "function") {
-          view.cancelAnimationFrame(parseFrame);
-        } else {
-          const clearTimer = view?.clearTimeout?.bind(view) ?? clearTimeout;
-          clearTimer(parseFrame);
-        }
+        clearTimeout(parseFrame);
         parseFrame = null;
       };
       const emitLatestResponse = () => {
@@ -431,13 +425,7 @@ const translate = <TranslateService["translate"]>async function (data) {
         if (parseFrame !== null) {
           return;
         }
-        const raf = view?.requestAnimationFrame?.bind(view);
-        if (raf) {
-          parseFrame = raf(emitLatestResponse) as unknown as number;
-          return;
-        }
-        const setTimer = view?.setTimeout?.bind(view) ?? setTimeout;
-        parseFrame = setTimer(emitLatestResponse, 0) as unknown as number;
+        parseFrame = setTimeout(emitLatestResponse, 0) as unknown as number;
       };
 
       xmlhttp.onprogress = (e: any) => {

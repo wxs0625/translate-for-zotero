@@ -629,25 +629,14 @@ const gptTranslate = async function (
     let refreshFrame: number | null = null;
     let eventFlushFrame: number | null = null;
 
-    const view = Zotero.getMainWindow?.();
     const scheduleFrame = (callback: () => void): number => {
-      const raf = view?.requestAnimationFrame?.bind(view);
-      if (raf) {
-        return raf(callback) as unknown as number;
-      }
-      const setTimer = view?.setTimeout?.bind(view) ?? setTimeout;
-      return setTimer(callback, 0) as unknown as number;
+      return setTimeout(callback, 0) as unknown as number;
     };
     const cancelFrame = (frame: number | null) => {
       if (frame === null) {
         return;
       }
-      if (typeof view?.cancelAnimationFrame === "function") {
-        view.cancelAnimationFrame(frame);
-        return;
-      }
-      const clearTimer = view?.clearTimeout?.bind(view) ?? clearTimeout;
-      clearTimer(frame);
+      clearTimeout(frame);
     };
     const stopQueuedWork = () => {
       cancelFrame(refreshFrame);
@@ -771,7 +760,7 @@ const gptTranslate = async function (
       for (let i = 0; i < events.length; i++) {
         consumeStreamEvent(events[i], force, i === events.length - 1);
       }
-      emitResult(force);
+      emitResult(true);
       if (pendingEvents.length) {
         queueEventFlush();
       }

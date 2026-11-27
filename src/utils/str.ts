@@ -54,8 +54,11 @@ export function stripEmptyLines(text: string, enabled: boolean): string {
       .replace(/\r\n/g, "\n")
       .replace(/\r/g, "\n");
 
-    // Remove leading newlines, then replace all remaining newlines with spaces
-    const result = normalizedText.replace(/^\n+/, "").replace(/\n+/g, " ");
+    // Remove empty lines while preserving paragraphs and line breaks
+    const result = normalizedText
+      .split("\n")
+      .filter((line) => line.trim().length > 0)
+      .join("\n");
 
     return result;
   }

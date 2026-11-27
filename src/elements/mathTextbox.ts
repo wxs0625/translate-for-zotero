@@ -1111,7 +1111,7 @@ export class MathTextboxElement extends XULElementBase {
       return stablePrefixLength;
     }
 
-    let stableLength = 0;
+    const candidates: number[] = [];
     OUTPUT_APPEND_SAFE_BOUNDARY_REGEX.lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = OUTPUT_APPEND_SAFE_BOUNDARY_REGEX.exec(deltaValue))) {
@@ -1119,11 +1119,15 @@ export class MathTextboxElement extends XULElementBase {
       if (candidate > stablePrefixLength) {
         break;
       }
+      candidates.push(candidate);
+    }
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      const candidate = candidates[i];
       if (this._isStableOutputRenderPrefix(deltaValue.slice(0, candidate))) {
-        stableLength = candidate;
+        return candidate;
       }
     }
-    return stableLength;
+    return 0;
   }
 
   private _canAppendOutputPrefixIndependently(prefix: string): boolean {
@@ -1276,14 +1280,20 @@ export class MathTextboxElement extends XULElementBase {
     if (/[_^]\s*(?:\{[^{}]*)?$/.test(tail)) {
       return false;
     }
-    const repairedPrefix = repairUnmatchedInlineDollars(
-      prefix.replace(/\uFF04|\uFE69/g, "$"),
-    );
-    const repairedTail = repairedPrefix.slice(-180);
-    if (/(?<!\\)\$[^$]*$/.test(repairedTail)) {
-      const dollars = (repairedPrefix.match(/(?<!\\)\$/g) || []).length;
-      if (dollars % 2 === 1) {
-        return false;
+    if (/(?<!\\)[\$\uFF04\uFE69][^\$\uFF04\uFE69]*$/.test(tail)) {
+      const rawDollars = (prefix.match(/(?<!\\)[\$\uFF04\uFE69]/g) || [])
+        .length;
+      if (rawDollars % 2 === 1) {
+        const repairedPrefix = repairUnmatchedInlineDollars(
+          prefix.replace(/\uFF04|\uFE69/g, "$"),
+        );
+        const repairedTail = repairedPrefix.slice(-180);
+        if (/(?<!\\)\$[^$]*$/.test(repairedTail)) {
+          const dollars = (repairedPrefix.match(/(?<!\\)\$/g) || []).length;
+          if (dollars % 2 === 1) {
+            return false;
+          }
+        }
       }
     }
     if (/<(?:\/?\w+|\/?\w+\s[^>]*)?$/.test(tail)) {
