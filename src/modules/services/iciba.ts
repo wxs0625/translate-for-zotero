@@ -1,3 +1,8 @@
+import {
+  getActiveReceiveToken,
+  isTaskSnapshotStillActive,
+  registerActiveRequest,
+} from "../../utils";
 import { aesEcbDecrypt, aesEcbEncrypt, base64 } from "../../utils/crypto";
 import { TranslateService } from "./base";
 
@@ -91,6 +96,9 @@ async function translateChunk(text: string, langFrom: string, langTo: string) {
         },
         body,
         responseType: "json",
+        requestObserver: (xmlhttp: XMLHttpRequest) => {
+          registerActiveRequest(xmlhttp);
+        },
       },
     ),
   );
@@ -124,20 +132,60 @@ const translate: TranslateService["translate"] = async function (data) {
     return;
   }
 
+  const rawSnapshot = data.raw;
+  const receiveToken = getActiveReceiveToken();
+  const canCommit = () =>
+    isTaskSnapshotStillActive(data, rawSnapshot, receiveToken);
+
   if (query.length <= CHUNK_SIZE) {
-    data.result = await translateChunk(query, from, to);
+    const translated = await translateChunk(query, from, to);
+    if (canCommit()) {
+      data.result = translated;
+    }
     return;
   }
 
-  let translated = "";
-  for (let i = 0; i < query.length; i += CHUNK_SIZE) {
-    translated += await translateChunk(
-      query.slice(i, i + CHUNK_SIZE),
-      from,
-      to,
-    );
-    data.result = translated;
-    addon.api.getTemporaryRefreshHandler({ task: data })();
+  const paragraphs = query
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const chunks: string[] = [];
+  let current = "";
+  for (const para of paragraphs) {
+    if (para.length > CHUNK_SIZE) {
+      if (current) {
+        chunks.push(current);
+        current = "";
+      }
+      let remaining = para;
+      while (remaining.length > CHUNK_SIZE) {
+        let cut = remaining.lastIndexOf(" ", CHUNK_SIZE);
+        if (cut < CHUNK_SIZE * 0.5) cut = CHUNK_SIZE;
+        chunks.push(remaining.slice(0, cut).trim());
+        remaining = remaining.slice(cut).trim();
+      }
+      if (remaining) chunks.push(remaining);
+      continue;
+    }
+    const sep = current ? "\n" : "";
+    if (current && current.length + sep.length + para.length > CHUNK_SIZE) {
+      chunks.push(current);
+      current = para;
+    } else {
+      current = `${current}${sep}${para}`;
+    }
+  }
+  if (current) chunks.push(current);
+
+  const translatedChunks: string[] = [];
+  for (const chunk of chunks) {
+    if (!canCommit()) return;
+    translatedChunks.push(await translateChunk(chunk, from, to));
+  }
+  if (canCommit()) {
+    data.result = translatedChunks.join("\n").trim();
   }
 };
 

@@ -7,6 +7,7 @@ import {
   TranslateTask,
   TranslateTaskRunner,
   abortActiveRequests,
+  autoDetectLanguage,
   bumpActiveReceiveToken,
   isTaskSnapshotStillActive,
   stripEmptyLines,
@@ -436,14 +437,40 @@ export class TranslationServices {
     if (!endpoint) {
       return undefined;
     }
-    const headers =
-      apiFormat === "anthropic"
+    let customHeaders: Record<string, string> = {};
+    if (id === "chatgpt" || id.startsWith("customgpt")) {
+      try {
+        const parsed = JSON.parse(
+          String(getPref(`${prefPrefix}.customHeaders`) || "{}"),
+        );
+        if (parsed && typeof parsed === "object") {
+          const blocked = new Set([
+            "content-type",
+            "authorization",
+            "api-key",
+            "x-api-key",
+            "anthropic-version",
+          ]);
+          customHeaders = Object.fromEntries(
+            Object.entries(parsed)
+              .filter(([key]) => !blocked.has(key.toLowerCase()))
+              .map(([key, value]) => [key, String(value)]),
+          );
+        }
+      } catch {
+        customHeaders = {};
+      }
+    }
+    const headers = {
+      ...(apiFormat === "anthropic"
         ? {
             Accept: "application/json",
             "anthropic-version": "2023-06-01",
             "x-api-key": secret,
           }
-        : authHeaders;
+        : authHeaders),
+      ...customHeaders,
+    };
     return { url: endpoint, headers };
   }
 
@@ -511,9 +538,10 @@ export class TranslationServices {
       (customIndex !== undefined
         ? getCustomGPTDisplayName(customIndex)
         : getString(`service-${id}`));
-    const model = this.getServiceModelPrefKey(id)
-      ? this.getServiceModelByID(id)
-      : "";
+    const model =
+      id === "gemini" || this.getServiceModelPrefKey(id)
+        ? this.getServiceModelByID(id)
+        : "";
     const displayName =
       includeModel && model ? `${baseName} - ${model}` : baseName;
     const service = this.getServiceById(id);
@@ -628,29 +656,33 @@ export class TranslationServices {
         abortActiveRequests();
       }
     }
-    task.status = "processing" as TranslateTask["status"];
     // Check whether item language is in disabled languages list
     let disabledByItemLanguage = false;
     if (!noCheckZoteroItemLanguage && task.itemId) {
       const taskItem = Zotero.Items.get(task.itemId);
       const item = taskItem && Zotero.Items.getTopLevel([taskItem])[0];
       if (item && task.type !== "custom") {
-        const itemLanguage = getPref("enableAutoDetectLanguage")
-          ? task.langfrom
-          : ((item.getField("language") as string) || "").split("-")[0];
-        const disabledLanguages = (
-          getPref("disabledLanguages") as string
-        ).split(",");
+        const detectedLang = getPref("enableAutoDetectLanguage")
+          ? task.langfrom || autoDetectLanguage(item).fromLanguage
+          : (item.getField("language") as string) || "";
+        const itemLangFull = (detectedLang || "").trim();
+        const itemLangMajor = itemLangFull.split("-")[0];
+        const disabledLanguages = String(getPref("disabledLanguages") || "")
+          .split(/[,;，；]/)
+          .map((lang) => lang.trim().toLowerCase())
+          .filter(Boolean);
         disabledByItemLanguage =
           disabledLanguages.length > 0 &&
-          !!itemLanguage &&
-          disabledLanguages.includes(itemLanguage);
+          !!itemLangFull &&
+          (disabledLanguages.includes(itemLangFull.toLowerCase()) ||
+            disabledLanguages.includes(itemLangMajor.toLowerCase()));
       }
     }
     if (disabledByItemLanguage) {
       ztoolkit.log("disabledByItemLanguage");
       return false;
     }
+    task.status = "processing" as TranslateTask["status"];
     // Remove possible translation results (for annotations).
     const splitChar = (getPref("splitChar") as string).trim();
     // /🔤[^🔤]*🔤/g

@@ -1,3 +1,4 @@
+import { registerActiveRequest } from "../../utils";
 import { TranslateService } from "./base";
 
 // Lang code map for the Youdao web demo API (https://fanyi.youdao.com, backed
@@ -27,12 +28,18 @@ const translate: TranslateService["translate"] = async function (data) {
       },
       body: params.toString(),
       responseType: "json",
+      requestObserver: (xmlhttp: XMLHttpRequest) => {
+        registerActiveRequest(xmlhttp);
+      },
     },
   );
   if (xhr?.status !== 200) {
     throw `Request error: ${xhr?.status}`;
   }
   const res = xhr.response;
+  if (!res || typeof res !== "object") {
+    throw "Service error: Empty or invalid response from Youdao";
+  }
   if (res.errorCode && res.errorCode !== "0") {
     throw `Youdao error code: ${res.errorCode}`;
   }

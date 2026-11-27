@@ -974,6 +974,12 @@ const gptTranslate = async function (
       // console.debug("GPT response received");
       try {
         const responseObj = JSON.parse(xmlhttp.responseText);
+        const apiError = parseStreamError(responseObj);
+        if (apiError) {
+          data.result = `${getString("service-errorPrefix")} ${apiError}`;
+          refreshHandler();
+          return;
+        }
         const resultContent = useResponsesApi
           ? parseResponsesApiNonStreamResponse(responseObj)
           : parseNonStreamResponse(responseObj);
@@ -1007,6 +1013,26 @@ const gptTranslate = async function (
         : { max_tokens: DEFAULT_MAX_OUTPUT_TOKENS };
 
     if (useAnthropicApi) {
+      const anthropicBudgets = { low: 2048, medium: 8192, high: 16384 };
+      let anthropicThinking: Record<string, any> | undefined;
+      let anthropicMaxTokens = 8192;
+      if (thinkingLevel === "off") {
+        anthropicThinking = { type: "disabled" };
+      } else if (
+        thinkingLevel === "low" ||
+        thinkingLevel === "medium" ||
+        thinkingLevel === "high"
+      ) {
+        const budget = anthropicBudgets[thinkingLevel];
+        anthropicThinking = { type: "enabled", budget_tokens: budget };
+        anthropicMaxTokens = Math.max(anthropicMaxTokens, budget + 1024);
+      }
+      const anthropicCustomParams = getCustomParams(
+        prefix,
+        anthropicThinking ? ["thinking"] : [],
+      );
+      const hasAnthropicMaxTokens =
+        anthropicCustomParams.max_tokens !== undefined;
       return {
         model: model,
         messages: [
@@ -1019,8 +1045,9 @@ const gptTranslate = async function (
           ? { temperature }
           : {}),
         stream: streamMode,
-        ...tokenLimitParams,
-        ...customParams,
+        ...(hasAnthropicMaxTokens ? {} : { max_tokens: anthropicMaxTokens }),
+        ...(anthropicThinking ? { thinking: anthropicThinking } : {}),
+        ...anthropicCustomParams,
       };
     }
 

@@ -369,8 +369,6 @@ const translate = <TranslateService["translate"]>async function (data) {
   const canCommit = () =>
     isTaskSnapshotStillActive(data, rawSnapshot, receiveToken);
 
-  data.result = "";
-
   const xhr = await Zotero.HTTP.request("POST", getGenContentAPI(data), {
     headers: {
       "Content-Type": "application/json",
@@ -415,7 +413,7 @@ const translate = <TranslateService["translate"]>async function (data) {
         if (parsedResult.length >= result.length) {
           result = parsedResult;
         }
-        if (result !== lastEmittedResult) {
+        if (result && result !== lastEmittedResult) {
           data.result = result;
           lastEmittedResult = result;
           refreshHandler();

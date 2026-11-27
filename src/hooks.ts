@@ -182,18 +182,22 @@ async function onMainWindowLoad(win: Window): Promise<void> {
     win.setTimeout(runPrewarm, 2000);
   }
 
-  win.document.addEventListener("focusout", (ev) => {
-    if (ev.target !== win.document) {
-      return;
-    }
-    if (addon.data.translate.concatKey) {
-      addon.data.translate.concatKey = false;
-      addon.hooks.onReaderTabPanelRefresh();
-    }
-  });
+  win.document.addEventListener("focusout", onDocumentFocusOut);
+}
+
+function onDocumentFocusOut(ev: Event) {
+  const doc = (ev.currentTarget as Document | null) || null;
+  if (!doc || ev.target !== doc) {
+    return;
+  }
+  if (addon.data.translate.concatKey) {
+    addon.data.translate.concatKey = false;
+    addon.hooks.onReaderTabPanelRefresh();
+  }
 }
 
 async function onMainWindowUnload(win: Window): Promise<void> {
+  win.document.removeEventListener("focusout", onDocumentFocusOut);
   win.document
     .querySelector(`[href="${config.addonRef}-mainWindow.ftl"]`)
     ?.remove();

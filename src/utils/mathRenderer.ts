@@ -429,11 +429,11 @@ function normalizeLatexTextScripts(text: string): string {
         `\\textsuperscript{${normalizeScriptSign(sign)}${value}}`,
     )
     .replace(
-      /([A-Za-z][A-Za-z0-9]*)\s*\^\s*[\u00AF\u02C9\u0304]/g,
+      /([A-Za-z][A-Za-z0-9]*)\s*\^\s*(?:\u00AF|\u02C9|\u0304)/g,
       "$1\\textsuperscript{-}",
     )
     .replace(
-      /([A-Za-z][A-Za-z0-9]*)\s*[\u00AF\u02C9\u0304]/g,
+      /([A-Za-z][A-Za-z0-9]*)\s*(?:\u00AF|\u02C9|\u0304)/g,
       "$1\\textsuperscript{-}",
     )
     .replace(

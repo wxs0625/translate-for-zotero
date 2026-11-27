@@ -132,7 +132,9 @@ const translate = <TranslateService["translate"]>async function (data) {
               if (!line.trim()) continue; // Skip empty lines
 
               // Remove the "data: " prefix if present
-              const dataLine = line.startsWith("data: ") ? line.slice(6) : line;
+              const dataLine = line.startsWith("data:")
+                ? line.slice(5).trimStart()
+                : line;
 
               if (dataLine.trim() === "[DONE]") continue;
 
@@ -158,12 +160,12 @@ const translate = <TranslateService["translate"]>async function (data) {
               e.target.timeout = 0;
             }
 
-            // Update the result
-            data.result = stripThinkingTags(result.replace(/^\n\n/, ""));
-            lastEmittedResult = data.result;
-
-            // Refresh UI to show progress
-            refreshHandler();
+            const nextResult = stripThinkingTags(result.replace(/^\n\n/, ""));
+            if (nextResult && nextResult !== lastEmittedResult) {
+              data.result = nextResult;
+              lastEmittedResult = nextResult;
+              refreshHandler();
+            }
           } catch (error) {
             console.error("Error processing Claude stream:", error);
           }

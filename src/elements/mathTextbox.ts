@@ -714,14 +714,14 @@ export class MathTextboxElement extends XULElementBase {
   scrollToTop(): void {
     this._overlayScrollTop = 0;
     this._overlayScrollLeft = 0;
-    this._textbox && ((this._textbox as any).scrollTop = 0);
+    if (this._textbox) (this._textbox as any).scrollTop = 0;
     if (this._overlay) {
       this._overlay.scrollTop = 0;
       this._overlay.scrollLeft = 0;
     }
     const view = this.ownerDocument?.defaultView;
     const run = () => {
-      this._textbox && ((this._textbox as any).scrollTop = 0);
+      if (this._textbox) (this._textbox as any).scrollTop = 0;
       if (this._overlay) {
         this._overlay.scrollTop = 0;
         this._overlay.scrollLeft = 0;
@@ -1162,7 +1162,7 @@ export class MathTextboxElement extends XULElementBase {
       return false;
     }
     return (
-      /(?:<\/(?:sup|sub)>|\\[\)]|[\$\uFF04\uFE69]|\})$/iu.test(tail) ||
+      /(?:<\/(?:sup|sub)>|\\[)]|[$\uFF04\uFE69]|\})$/iu.test(tail) ||
       /\\(?:approx|times|cdot|%)$/u.test(tail)
     );
   }
@@ -1280,9 +1280,8 @@ export class MathTextboxElement extends XULElementBase {
     if (/[_^]\s*(?:\{[^{}]*)?$/.test(tail)) {
       return false;
     }
-    if (/(?<!\\)[\$\uFF04\uFE69][^\$\uFF04\uFE69]*$/.test(tail)) {
-      const rawDollars = (prefix.match(/(?<!\\)[\$\uFF04\uFE69]/g) || [])
-        .length;
+    if (/(?<!\\)[$\uFF04\uFE69][^$\uFF04\uFE69]*$/.test(tail)) {
+      const rawDollars = (prefix.match(/(?<!\\)[$\uFF04\uFE69]/g) || []).length;
       if (rawDollars % 2 === 1) {
         const repairedPrefix = repairUnmatchedInlineDollars(
           prefix.replace(/\uFF04|\uFE69/g, "$"),
@@ -1387,7 +1386,7 @@ export class MathTextboxElement extends XULElementBase {
       // A macron at the delta start combines with the previous chunk's
       // last letter in the final render (x + ˉ → x\textsuperscript{-});
       // re-render with full context instead of appending it standalone.
-      !/^[\u00AF\u02C9\u0304]/.test(plainAppendValue) &&
+      !/^(?:\u00AF|\u02C9|\u0304)/.test(plainAppendValue) &&
       // Two adjacent minus signs merge into one during final normalization
       // (−− → −); re-render with context instead of appending.
       !(
@@ -1729,8 +1728,10 @@ export class MathTextboxElement extends XULElementBase {
     }
     target.scrollTop = top;
     target.scrollLeft = left;
-    target.inputField && (target.inputField.scrollTop = top);
-    target.inputField && (target.inputField.scrollLeft = left);
+    if (target.inputField) {
+      target.inputField.scrollTop = top;
+      target.inputField.scrollLeft = left;
+    }
   }
 
   private _getCurrentScrollPosition(): { top: number; left: number } {
@@ -2119,11 +2120,11 @@ export class MathTextboxElement extends XULElementBase {
           `\\textsuperscript{${normalizeScriptSign(sign)}${value}}`,
       )
       .replace(
-        /([A-Za-z][A-Za-z0-9]*)\s*\^\s*[\u00AF\u02C9\u0304]/g,
+        /([A-Za-z][A-Za-z0-9]*)\s*\^\s*(?:\u00AF|\u02C9|\u0304)/g,
         "$1\\textsuperscript{-}",
       )
       .replace(
-        /([A-Za-z][A-Za-z0-9]*)\s*[\u00AF\u02C9\u0304]/g,
+        /([A-Za-z][A-Za-z0-9]*)\s*(?:\u00AF|\u02C9|\u0304)/g,
         "$1\\textsuperscript{-}",
       )
       .replace(

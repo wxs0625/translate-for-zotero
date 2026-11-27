@@ -244,14 +244,26 @@ function buildPrefsPane() {
 
   doc
     .querySelector(`#${makeId("sentenceServicesSecret")}`)
-    ?.addEventListener("blur", (e: Event) => {
-      onPrefsEvents("updateSentenceSecret");
+    ?.addEventListener("input", () => {
+      onPrefsEvents("updateSentenceSecret", false);
+    });
+
+  doc
+    .querySelector(`#${makeId("sentenceServicesSecret")}`)
+    ?.addEventListener("blur", () => {
+      onPrefsEvents("updateSentenceSecret", true);
     });
 
   doc
     .querySelector(`#${makeId("wordServicesSecret")}`)
-    ?.addEventListener("blur", (e: Event) => {
-      onPrefsEvents("updateWordSecret");
+    ?.addEventListener("input", () => {
+      onPrefsEvents("updateWordSecret", false);
+    });
+
+  doc
+    .querySelector(`#${makeId("wordServicesSecret")}`)
+    ?.addEventListener("blur", () => {
+      onPrefsEvents("updateWordSecret", true);
     });
 
   doc
@@ -502,7 +514,7 @@ function onPrefsEvents(type: string, fromElement: boolean = true) {
           `#${makeId("sentenceServicesSecret")}`,
         ) as HTMLInputElement;
         const trimmedValue = inputElem.value.trim();
-        if (trimmedValue !== inputElem.value) {
+        if (fromElement && trimmedValue !== inputElem.value) {
           inputElem.value = trimmedValue;
         }
         if (trimmedValue !== getServiceSecret(serviceId)) {
@@ -565,7 +577,7 @@ function onPrefsEvents(type: string, fromElement: boolean = true) {
           `#${makeId("wordServicesSecret")}`,
         ) as HTMLInputElement;
         const trimmedValue = inputElem.value.trim();
-        if (trimmedValue !== inputElem.value) {
+        if (fromElement && trimmedValue !== inputElem.value) {
           inputElem.value = trimmedValue;
         }
         if (trimmedValue !== getServiceSecret(serviceId)) {
@@ -692,6 +704,7 @@ function onPrefsEvents(type: string, fromElement: boolean = true) {
       break;
     case "fetchModels":
       {
+        onPrefsEvents("updateSentenceSecret", true);
         void (async () => {
           const serviceID = getPref("translateSource") as string;
           if (!supportsModelListing(serviceID)) {
