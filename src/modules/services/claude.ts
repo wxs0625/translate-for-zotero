@@ -101,6 +101,7 @@ const translate = <TranslateService["translate"]>async function (data) {
     headers: headers,
     body: JSON.stringify(requestBody),
     responseType: "text",
+    timeout: 120000,
     requestObserver: (xmlhttp: XMLHttpRequest) => {
       registerActiveRequest(xmlhttp);
       if (stream) {
@@ -178,7 +179,7 @@ const translate = <TranslateService["translate"]>async function (data) {
           }
           data.status = "success";
           const finalResult = stripThinkingTags(result.replace(/^\n\n/, ""));
-          if (finalResult !== lastEmittedResult) {
+          if (finalResult && finalResult !== lastEmittedResult) {
             data.result = finalResult;
             refreshHandler();
           }

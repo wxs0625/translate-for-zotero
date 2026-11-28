@@ -777,14 +777,20 @@ export class TranslationServices {
         task.result = stripEmptyLines(task.result, true);
       }
 
-      // Treat an empty translation as a failure so configured candidate services can be tried.
-      if (task.status === "success" && !task.result?.trim()) {
+      // Treat an empty translation (or untouched translating placeholder) as a failure.
+      const translatingPlaceholder = getString("status-translating").trim();
+      if (
+        task.status === "success" &&
+        (!task.result?.trim() || task.result.trim() === translatingPlaceholder)
+      ) {
         ztoolkit.log("Empty translation result; treating as failure", {
           service: task.service,
           raw: task.raw,
         });
-        task.result = "";
         task.status = "fail";
+        task.result = task.candidateServices.length
+          ? ""
+          : `${getString("service-errorPrefix")} ${this.getServiceNameByID(task.service, false)}\n\nEmpty translation result.`;
       }
 
       // Run extra tasks. Do not wait.

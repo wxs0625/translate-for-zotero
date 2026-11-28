@@ -1277,8 +1277,9 @@ export class TranslatorPanel extends PluginCEBase {
       fpOutputElem?.setAttribute?.("data-render-processing-only", "true");
       // Use a length-based render key during streaming (same as full path)
       const fpRenderKey = `${fastPathTask.id}:${fpOutputValue.length}`;
-      // Only update if the output text actually changed
-      if (fpCurrentVal !== fpOutputValue) {
+      // Only update if the output text is non-empty and actually changed
+      // (avoid wiping "Translating..." during thinking/keepalive chunks).
+      if (fpOutputValue && fpCurrentVal !== fpOutputValue) {
         // Preserve scroll without forced reflow: use element's own
         // scroll-preservation mechanism instead of captureFieldScroll.
         if (typeof fpOutputElem?.setValueAndRefresh === "function") {

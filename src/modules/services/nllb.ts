@@ -84,10 +84,11 @@ const translate: TranslateService["translate"] = async (data) => {
           e.target.timeout = 0;
         }
 
-        data.result = result;
         preLength = e.target.response.length;
-
-        refreshHandler();
+        if (result) {
+          data.result = result;
+          refreshHandler();
+        }
       };
     };
 

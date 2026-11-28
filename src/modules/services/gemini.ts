@@ -389,6 +389,7 @@ const translate = <TranslateService["translate"]>async function (data) {
       },
     }),
     responseType: "text",
+    timeout: 120000,
     requestObserver: (xmlhttp: XMLHttpRequest) => {
       registerActiveRequest(xmlhttp);
       let result = "";
@@ -453,7 +454,7 @@ const translate = <TranslateService["translate"]>async function (data) {
           result = replayed;
         }
         const finalResult = result;
-        if (finalResult !== lastEmittedResult) {
+        if (finalResult && finalResult !== lastEmittedResult) {
           data.result = finalResult;
           refreshHandler();
         }

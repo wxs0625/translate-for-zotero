@@ -613,6 +613,7 @@ const gptTranslate = async function (
     xmlhttp: XMLHttpRequest,
     committedPrefix = "",
     onFinal?: (text: string) => void,
+    onError?: (error: string) => void,
   ) => {
     let preLength = 0;
     let result = "";
@@ -659,7 +660,7 @@ const gptTranslate = async function (
       });
     };
 
-    const emitResult = (force = false) => {
+    const emitResult = (immediate = false) => {
       if (!canCommit()) {
         ztoolkit.log("GPT stream skipped refresh because task is inactive", {
           taskId: data.id,
@@ -668,7 +669,13 @@ const gptTranslate = async function (
         return;
       }
       const nextResult = trimTrailingLineBreaks(result.replace(/^\n\n/, ""));
-      if (!force && nextResult === lastEmittedResult) {
+      const fullNextResult = `${committedPrefix}${nextResult}`;
+      // Never overwrite the "Translating..." placeholder with an empty string
+      // while the model is still thinking or sending keepalive/role chunks.
+      if (!fullNextResult) {
+        return;
+      }
+      if (nextResult === lastEmittedResult) {
         return;
       }
       if (!canCommit()) {
@@ -681,9 +688,9 @@ const gptTranslate = async function (
         );
         return;
       }
-      data.result = `${committedPrefix}${nextResult}`;
+      data.result = fullNextResult;
       lastEmittedResult = nextResult;
-      if (force) {
+      if (immediate) {
         cancelFrame(refreshFrame);
         refreshFrame = null;
         refreshHandler();
@@ -938,6 +945,9 @@ const gptTranslate = async function (
         finishReason = replayed.finishReason || finishReason;
       }
       const finalResult = trimTrailingLineBreaks(result.replace(/^\n\n/, ""));
+      if (streamError) {
+        onError?.(streamError);
+      }
       if (finalResult) {
         result = streamError
           ? `${finalResult}\n\n${getString("service-errorPrefix")} GPT stream error: ${streamError}`
@@ -1079,6 +1089,7 @@ const gptTranslate = async function (
 
   const requestOnce = async (sourceText: string, committedPrefix = "") => {
     let finalSegment = "";
+    let requestStreamError = "";
     const requestHeaders = {
       Accept: streamMode ? "text/event-stream" : "application/json",
       ...(useAnthropicApi
@@ -1098,12 +1109,20 @@ const gptTranslate = async function (
       headers: requestHeaders,
       body: JSON.stringify(buildRequestBody(sourceText)),
       responseType: "text",
+      timeout: 120000,
       requestObserver: (xmlhttp: XMLHttpRequest) => {
         registerActiveRequest(xmlhttp);
         if (streamMode) {
-          streamCallback(xmlhttp, committedPrefix, (text) => {
-            finalSegment = text;
-          });
+          streamCallback(
+            xmlhttp,
+            committedPrefix,
+            (text) => {
+              finalSegment = text;
+            },
+            (err) => {
+              requestStreamError = err;
+            },
+          );
         } else {
           nonStreamCallback(xmlhttp, committedPrefix, (text) => {
             finalSegment = text;
@@ -1121,6 +1140,9 @@ const gptTranslate = async function (
     );
     if (replayedFinalSegment.length >= finalSegment.length) {
       finalSegment = replayedFinalSegment;
+    }
+    if (!finalSegment && requestStreamError) {
+      throw `GPT stream error: ${requestStreamError}`;
     }
     if (finalSegment && canCommit()) {
       data.result = `${committedPrefix}${trimTrailingLineBreaks(finalSegment)}`;

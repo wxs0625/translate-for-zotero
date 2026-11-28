@@ -107,8 +107,10 @@ const translate: TranslateService["translate"] = async function (data) {
         e.target.timeout = 0;
       }
 
-      data.result = result;
-      refreshHandler();
+      if (result) {
+        data.result = result;
+        refreshHandler();
+      }
     };
   };
 
